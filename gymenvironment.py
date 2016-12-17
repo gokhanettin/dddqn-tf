@@ -44,6 +44,7 @@ class GymEnvironment:
         self._state.popleft()
         self._state.append(x)
 
+        r = np.clip(r, -1, 1)
         return s, r, done, info
 
     def get_num_actions(self):
