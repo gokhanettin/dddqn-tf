@@ -5,12 +5,12 @@ import numpy as np
 import gym
 
 class GymEnvironment:
-    def __init__(self, name, width, height, nframes):
+    def __init__(self, name, height, width, nchannels):
         self._width = width
         self._height = height
-        self._nframes = nframes
+        self._nchannels = nchannels
         self._env = gym.make(name)
-        self._state = deque()
+        self._state = deque(maxlen=self._nchannels-1)
         if (self._env.spec.id == "Pong-v0" or self._env.spec.id == "Breakout-v0"):
             print("Doing workaround for pong or breakout")
             # Gym returns 6 possible actions for breakout and pong.
@@ -21,11 +21,11 @@ class GymEnvironment:
             self._gym_actions = range(self._env.get_num_actions())
 
     def reset(self):
-        self._state = deque()
+        self._state = deque(maxlen=self._nchannels-1)
         x = self._env.reset()
         x = self._get_preprocessed_frame(x)
-        s = np.stack(([x] * self._nframes), axis = 0)
-        for _ in range(self._nframes-1):
+        s = np.stack(([x] * self._nchannels), axis = 0)
+        for _ in range(self._nchannels-1):
             self._state.append(x)
         return s
 
@@ -36,14 +36,10 @@ class GymEnvironment:
         x, r, done, info = self._env.step(self._gym_actions[action_index])
         x = self._get_preprocessed_frame(x)
         previous_frames = np.array(self._state)
-        s = np.empty((self._nframes, self._height, self._width))
-        s[:self._nframes-1, ...] = previous_frames
-        s[self._nframes-1] = x
-
-        # Dequeue the oldest, enqueue the latest
-        self._state.popleft()
+        s = np.empty((self._nchannels, self._height, self._width))
+        s[:self._nchannels-1] = previous_frames
+        s[self._nchannels-1] = x
         self._state.append(x)
-
         r = np.clip(r, -1, 1)
         return s, r, done, info
 

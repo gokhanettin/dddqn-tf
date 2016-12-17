@@ -1,9 +1,9 @@
 class MyEnvironment:
-    def __init__(self, name, width, height, nframes):
+    def __init__(self, name, height, width, nchannelss):
         self._env = None
         if name == "my-Catch":
             from myenvs.catch import Catch
-            self._env = Catch(width, height, nframes)
+            self._env = Catch(width, height, nchannelss)
         else:
             raise ValueError("Unknown environment", name)
 

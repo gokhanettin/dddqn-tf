@@ -28,7 +28,7 @@ class _Object:
         self.name = name
 
 class Catch:
-    def __init__(self, width, height, nframes):
+    def __init__(self, height, width, nchannels):
         self._sizeX = GRIDSIZE
         self._sizeY = GRIDSIZE
         self._objects = []
@@ -36,7 +36,7 @@ class Catch:
         self._max_step = GRIDSIZE * GRIDSIZE * 2
         self._width = width
         self._height = height
-        self._nframes = nframes
+        self._nchannels = nchannels
         self.reset()
         plt.ion() # plot interactive mode on
 
@@ -47,17 +47,17 @@ class Catch:
         food1 = _Object(self._random_position(), _GREEN, 1, 'food')
         self._objects.append(food1)
 
-        self._state = deque()
+        self._state = deque(maxlen=self._nchannels-1)
         x = self._mk_image()
         x = self._get_preprocessed_frame(x)
-        s = np.stack(([x] * self._nframes), axis = 0)
-        for _ in range(self._nframes-1):
+        s = np.stack(([x] * self._nchannels), axis = 0)
+        for _ in range(self._nchannels-1):
             self._state.append(x)
         return s
 
     def render(self):
         plt.imshow(self._image, interpolation="nearest")
-        plt.pause(0.01)
+        plt.pause(0.05)
 
     def step(self, action):
         self._move(action)
@@ -65,14 +65,10 @@ class Catch:
         x = self._mk_image()
         x = self._get_preprocessed_frame(x)
         previous_frames = np.array(self._state)
-        s = np.empty((self._nframes, self._height, self._width))
-        s[:self._nframes-1, ...] = previous_frames
-        s[self._nframes-1] = x
-
-        # Dequeue the oldest, enqueue the latest
-        self._state.popleft()
+        s = np.empty((self._nchannels, self._height, self._width))
+        s[:self._nchannels-1] = previous_frames
+        s[self._nchannels-1] = x
         self._state.append(x)
-
         return s, r, done, None
 
     def get_num_actions(self):

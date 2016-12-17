@@ -1,11 +1,11 @@
-def make_environment(name, width=84, height=84, nframes=4):
+def make_environment(name, height=84, width=84, nchannels=4):
     env = None
     if name.split('-')[0] == 'my':
         from myenvironment import MyEnvironment
-        env = MyEnvironment(name, width, height, nframes)
+        env = MyEnvironment(name, height, width, nchannels)
     else:
         from gymenvironment import GymEnvironment
-        env = GymEnvironment(name, width, height, nframes)
+        env = GymEnvironment(name, height, width, nchannels)
     return env
 
 if __name__ == "__main__":
