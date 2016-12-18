@@ -28,7 +28,11 @@ def static_vars(**kwargs):
 def adjust_reward(reward):
     if F.reward_adjustment_method == "map":
         adjust_reward.max_reward = max(reward, adjust_reward.max_reward)
-        adjusted_reward = np.clip(reward, -1.0, reward/adjust_reward.max_reward)
+        if adjust_reward.max_reward == 0.0:
+            upper_clip = 1.0
+        else:
+            upper_clip = reward/adjust_reward.max_reward
+        adjusted_reward = np.clip(reward, -1.0, upper_clip)
     elif F.reward_adjustment_method == "clip":
         adjusted_reward = np.clip(reward, -1.0, 1.0)
     elif F.reward_adjustment_method == "none":
