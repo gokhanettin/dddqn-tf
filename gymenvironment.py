@@ -18,7 +18,7 @@ class GymEnvironment:
             # pick from a simplified "LEFT", "RIGHT", "NOOP" action space.
             self._gym_actions = [1,2,3]
         else:
-            self._gym_actions = range(self._env.get_num_actions())
+            self._gym_actions = [action for action in range(self._env.action_space.n)]
 
     def reset(self):
         self._state = deque(maxlen=self._nchannels-1)
