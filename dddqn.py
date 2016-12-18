@@ -149,7 +149,7 @@ def train(session, graph_ops, nactions, saver):
     for ep_counter in range(F.num_training_episodes):
         ep_buffer = ExperienceBuffer(F.experience_buffer_size)
         ep_step = 0
-        ep_reward = 0
+        ep_reward = 0.0
         ep_avrg_max_q = 0.0
         state = env.reset()
         current_state = get_flat_state(state)
@@ -210,7 +210,7 @@ def train(session, graph_ops, nactions, saver):
             for summary_str in summary_str_lists:
                 writer.add_summary(summary_str, ep_counter)
 
-            fmt = "STEP {:8d} | EPISODE {:6d} | REWARD {:3d} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
+            fmt = "STEP {:8d} | EPISODE {:6d} | REWARD {:2f} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
             print(fmt.format(step, ep_counter, ep_reward, ep_avrg_max_q, epsilon))
 
         ex_buffer.add(ep_buffer.buff)
@@ -230,7 +230,7 @@ def test(session, graph_ops, saver):
     for _ in range(F.num_testing_episodes):
         state = env.reset()
         state = get_flat_state(state)
-        ep_reward = 0
+        ep_reward = 0.0
         done = False
         while not done:
             env.render()
