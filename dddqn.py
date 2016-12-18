@@ -109,13 +109,13 @@ def get_graph_ops(nactions):
 
 
 def get_summary_ops():
-    tags = ['Reward', 'Avrg Max Q', 'Epsilon']
+    summary_tags = ['Avrg Reward', 'Avrg Max Q', 'Epsilon']
     summaries = {}
     summary_placeholders = {}
-    for tag in tags:
+    for tag in summary_tags:
         summary_placeholders[tag] = tf.placeholder(shape=(), dtype=tf.float32)
         summaries[tag] = tf.scalar_summary(tag, summary_placeholders[tag])
-    return tags, summary_placeholders, summaries
+    return summary_tags, summary_placeholders, summaries
 
 def train(session, graph_ops, nactions, saver):
     if F.load_model:
@@ -139,13 +139,15 @@ def train(session, graph_ops, nactions, saver):
     op_update_target_params = graph_ops['update_target_params']
     session.run(op_update_target_params)
 
-    tags, op_summary_placeholders, op_summaries = get_summary_ops()
+    summary_tags, op_summary_placeholders, op_summaries = get_summary_ops()
 
     env = make_environment(F.game, F.width, F.height, F.num_channels)
     step = 0
     drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
     epsilon = F.start_epsilon
     ex_buffer = ExperienceBuffer(F.experience_buffer_size)
+    avrg_reward = 0.0
+    avrg_max_q = 0.0
     for ep_counter in range(F.num_training_episodes):
         ep_buffer = ExperienceBuffer(F.experience_buffer_size)
         ep_step = 0
@@ -198,10 +200,14 @@ def train(session, graph_ops, nactions, saver):
 
         ep_avrg_max_q /= ep_step
 
+        avrg_reward += ep_reward
+        avrg_max_q += ep_avrg_max_q
         if ep_counter % F.summary_interval == 0:
-            stats = [ep_reward, ep_avrg_max_q, epsilon]
+            avrg_reward /= F.summary_interval
+            avrg_max_q /= F.summary_interval
+            stats = [avrg_reward, avrg_max_q, epsilon]
             tag_dict = {}
-            for index, tag in enumerate(tags):
+            for index, tag in enumerate(summary_tags):
                 tag_dict[tag] = stats[index]
 
             summary_str_lists = session.run([op_summaries[tag] for tag in tag_dict.keys()],
@@ -211,7 +217,7 @@ def train(session, graph_ops, nactions, saver):
                 writer.add_summary(summary_str, ep_counter)
 
             fmt = "STEP {:8d} | EPISODE {:6d} | REWARD {:.2f} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
-            print(fmt.format(step, ep_counter, ep_reward, ep_avrg_max_q, epsilon))
+            print(fmt.format(step, ep_counter, avrg_reward, avrg_max_q, epsilon))
 
         ex_buffer.add(ep_buffer.buff)
         if ep_counter % F.checkpoint_interval == 0:
