@@ -97,7 +97,7 @@ class Catch:
                 current_positions.append((obj.x, obj.y))
         for pos in current_positions:
             points.remove(pos)
-        location = np.random.choice(range(len(points)),replace=False)
+        location = np.random.choice(range(len(points)), replace=False)
         return points[location]
 
     def _move(self, direction):
