@@ -10,13 +10,13 @@ flags.DEFINE_string('game',
                     'Name of the games. See `myenvironment.py` for custom games. '
                     'Full list of Atari games: https://gym.openai.com/envs#atari')
 
-flags.DEFINE_integer('num_training_episodes',
-                     1000000,
-                     'Number of training training.')
-
 flags.DEFINE_integer('pre_training_steps',
                      1000000,
                      'The number of random steps before training')
+
+flags.DEFINE_integer('num_training_episodes',
+                     1000000,
+                     'Number of training training.')
 
 flags.DEFINE_integer('num_testing_episodes',
                      10,

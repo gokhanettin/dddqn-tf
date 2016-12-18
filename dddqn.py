@@ -122,7 +122,7 @@ def train(session, graph_ops, nactions, saver):
     drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
     epsilon = F.start_epsilon
     ex_buffer = ExperienceBuffer(F.experience_buffer_size)
-    for ep_counter in range(F.experience_buffer_size):
+    for ep_counter in range(F.num_training_episodes):
         ep_buffer = ExperienceBuffer(F.experience_buffer_size)
         ep_step = 0
         ep_reward = 0
