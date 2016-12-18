@@ -32,14 +32,12 @@ class Avoid:
     def __init__(self, height, width, nchannels):
         self._sizeX = GRIDSIZE
         self._sizeY = GRIDSIZE
-        self._objects = []
         self._step_count = 0
         self._max_step = GRIDSIZE * GRIDSIZE * 2
         self._width = width
         self._height = height
         self._nchannels = nchannels
         self.reset()
-        plt.ion() # plot interactive mode on
 
     def reset(self):
         self._objects = []
@@ -47,17 +45,18 @@ class Avoid:
         self._objects.append(agent)
         food1 = _Object(self._random_position(), 1, _GREEN, 1, 'food')
         self._objects.append(food1)
-        fire1 = _Object(self._random_position(), 1, _RED, -1, 'fire')
-        self._objects.append(fire1)
-        fire2 = _Object(self._random_position(), 1, _RED, -1, 'fire')
-        self._objects.append(fire2)
-        fire3 = _Object(self._random_position(), 1, _RED, -1, 'fire')
-        self._objects.append(fire3)
-        fire4 = _Object(self._random_position(), 1, _RED, -1, 'fire')
-        self._objects.append(fire4)
+        poison1 = _Object(self._random_position(), 1, _RED, -1, 'poison')
+        self._objects.append(poison1)
+        poison2 = _Object(self._random_position(), 1, _RED, -1, 'poison')
+        self._objects.append(poison2)
+        poison3 = _Object(self._random_position(), 1, _RED, -1, 'poison')
+        self._objects.append(poison3)
+        poison4 = _Object(self._random_position(), 1, _RED, -1, 'poison')
+        self._objects.append(poison4)
 
+        self._rendered = False
         self._state = deque(maxlen=self._nchannels-1)
-        x = self._mk_image()
+        x = self._mk_frame()
         x = self._get_preprocessed_frame(x)
         s = np.stack(([x] * self._nchannels), axis = 0)
         for _ in range(self._nchannels-1):
@@ -65,13 +64,18 @@ class Avoid:
         return s
 
     def render(self):
-        plt.imshow(self._image, cmap='gray', interpolation="nearest")
-        plt.pause(0.05)
+        if not self._rendered:
+            self._rendered = True
+            self._imshow = plt.imshow(self._frame, interpolation="nearest")
+            plt.title("Avoid")
+        else:
+            self._imshow.set_data(self._frame)
+            plt.pause(0.3)
 
     def step(self, action):
         self._move(action)
         r, done = self._check_goal()
-        x = self._mk_image()
+        x = self._mk_frame()
         x = self._get_preprocessed_frame(x)
         previous_frames = np.array(self._state)
         s = np.empty((self._nchannels, self._height, self._width))
@@ -84,7 +88,7 @@ class Avoid:
         # up, down, right, left
         return 4
 
-    def _mk_image(self):
+    def _mk_frame(self):
         a = np.ones([self._sizeY+2, self._sizeX+2, 3])
         a[1:-1, 1:-1, :] = 0
         for obj in self._objects:
@@ -92,8 +96,8 @@ class Avoid:
         r = scipy.misc.imresize(a[:,:,0],[84,84,1],interp='nearest')
         g = scipy.misc.imresize(a[:,:,1],[84,84,1],interp='nearest')
         b = scipy.misc.imresize(a[:,:,2],[84,84,1],interp='nearest')
-        self._image = np.stack([r, g, b],axis=2)
-        return self._image
+        self._frame = np.stack([r, g, b],axis=2)
+        return self._frame
 
     def _random_position(self):
         iterables = [ range(self._sizeX), range(self._sizeY)]
@@ -142,7 +146,7 @@ class Avoid:
                 if other.reward == 1:
                     self._objects.append(_Object(self._random_position(), 1, _GREEN, 1, 'food'))
                 else:
-                    self._objects.append(_Object(self._random_position(), 1, _RED, -1, 'fire'))
+                    self._objects.append(_Object(self._random_position(), 1, _RED, -1, 'poison'))
                 return other.reward, done
         return 0, done
 
