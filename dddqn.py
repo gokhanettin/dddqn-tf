@@ -17,6 +17,26 @@ def get_num_actions():
 def get_flat_state(state):
     return np.reshape(state, [F.num_channels * F.height * F.width])
 
+def static_vars(**kwargs):
+    def decorate(func):
+        for k in kwargs:
+            setattr(func, k, kwargs[k])
+        return func
+    return decorate
+
+@static_vars(max_reward=0.0)
+def adjust_reward(reward):
+    if F.reward_adjustment_method == "map":
+        adjust_reward.max_reward = max(reward, adjust_reward.max_reward)
+        adjusted_reward = np.clip(reward, -1.0, reward/adjust_reward.max_reward)
+    elif F.reward_adjustment_method == "clip":
+        adjusted_reward = np.clip(reward, -1.0, 1.0)
+    elif F.reward_adjustment_method == "none":
+        adjusted_reward = reward
+    return adjusted_reward
+
+
+
 def get_network_ops(nactions):
     # Environments states should have the shape of `reshaped_state`,
     # we then transpose it to have the shape of `inputs`. Note that
@@ -141,8 +161,9 @@ def train(session, graph_ops, nactions, saver):
 
             state, reward, done, _ = env.step(action)
             next_state = get_flat_state(state)
+            adjusted_reward = adjust_reward(reward)
             ep_buffer.add(np.reshape(
-                np.array([current_state, action, reward, next_state, done]), [1, 5]))
+                np.array([current_state, action, adjusted_reward, next_state, done]), [1, 5]))
 
             if step > F.pre_training_steps:
                 if epsilon > F.final_epsilon:

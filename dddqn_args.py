@@ -1,8 +1,9 @@
 import tensorflow as tf
 
 flags = tf.app.flags
+
 flags.DEFINE_string('experiment',
-                    'dqn_breakout',
+                    'breakout',
                     'Name of the current experiment')
 
 flags.DEFINE_string('game',
@@ -26,11 +27,14 @@ flags.DEFINE_integer('batch_size',
                      32,
                      'Batch size for update')
 
-
 flags.DEFINE_string('trainer',
                     'RMSPropOptimizer',
                     'Training optimizer: [AdamOptimizer | RMSPropOptimizer '
                     '| AdadeltaOptimizer | AdagradOptimizer | GradientDescentOptimizer]')
+
+flags.DEFINE_string('reward_adjustment_method',
+                    'map',
+                    'Method to adjust reward for training: [map | clip | none]')
 
 flags.DEFINE_integer('width',
                      84,
@@ -55,7 +59,6 @@ flags.DEFINE_float('alpha',
 flags.DEFINE_float('gamma',
                    0.99,
                    'Reward discount rate.')
-
 
 flags.DEFINE_float('tau',
                    0.001,
