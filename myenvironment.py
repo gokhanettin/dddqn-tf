@@ -1,9 +1,12 @@
 class MyEnvironment:
-    def __init__(self, name, height, width, nchannelss):
+    def __init__(self, name, height, width, nchannels):
         self._env = None
         if name == "my-Catch":
             from myenvs.catch import Catch
-            self._env = Catch(width, height, nchannelss)
+            self._env = Catch(width, height, nchannels)
+        elif name == "my-Avoid":
+            from myenvs.avoid import Avoid
+            self._env = Avoid(width, height, nchannels)
         else:
             raise ValueError("Unknown environment", name)
 
@@ -27,11 +30,13 @@ class MyEnvironment:
 
 if __name__ == "__main__":
     import random
-    env = MyEnvironment("my-Catch", 84, 84, 4)
-    state = env.reset()
-    done = False
-    while not done:
-        env.render()
-        action = random.randint(0, env.get_num_actions()-1)
-        state, reward, done, info = env.step(action)
-        print(reward, done)
+    games = ["my-Catch", "my-Avoid"]
+    for game in games:
+        env = MyEnvironment(game , 84, 84, 4)
+        state = env.reset()
+        done = False
+        while not done:
+            env.render()
+            action = random.randrange(env.get_num_actions())
+            state, reward, done, info = env.step(action)
+            print(reward, done)

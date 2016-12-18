@@ -10,21 +10,13 @@ def make_environment(name, height=84, width=84, nchannels=4):
 
 if __name__ == "__main__":
     import random
-    env = make_environment('Breakout-v0')
-    state = env.reset()
-    done = False
-    while not done:
-        env.render()
-        action = random.randint(0, env.get_num_actions()-1)
-        state, reward, done, info = env.step(action)
-        print(reward, done)
-
-    env = make_environment('my-Catch')
-    state = env.reset()
-    done = False
-    while not done:
-        env.render()
-        action = random.randint(0, env.get_num_actions()-1)
-        state, reward, done, info = env.step(action)
-        print(reward, done)
-
+    games = ["Breakout-v0", "SpaceInvaders-v0", "my-Catch", "my-Avoid"]
+    for game in games:
+        env = make_environment(game)
+        state = env.reset()
+        done = False
+        while not done:
+            env.render()
+            action = random.randrange(env.get_num_actions())
+            state, reward, done, info = env.step(action)
+            print(reward, done)

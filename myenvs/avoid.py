@@ -28,7 +28,7 @@ class _Object:
         self.reward = reward
         self.name = name
 
-class Catch:
+class Avoid:
     def __init__(self, height, width, nchannels):
         self._sizeX = GRIDSIZE
         self._sizeY = GRIDSIZE
@@ -47,6 +47,14 @@ class Catch:
         self._objects.append(agent)
         food1 = _Object(self._random_position(), 1, _GREEN, 1, 'food')
         self._objects.append(food1)
+        fire1 = _Object(self._random_position(), 1, _RED, -1, 'fire')
+        self._objects.append(fire1)
+        fire2 = _Object(self._random_position(), 1, _RED, -1, 'fire')
+        self._objects.append(fire2)
+        fire3 = _Object(self._random_position(), 1, _RED, -1, 'fire')
+        self._objects.append(fire3)
+        fire4 = _Object(self._random_position(), 1, _RED, -1, 'fire')
+        self._objects.append(fire4)
 
         self._state = deque(maxlen=self._nchannels-1)
         x = self._mk_image()
@@ -57,7 +65,7 @@ class Catch:
         return s
 
     def render(self):
-        plt.imshow(self._image, interpolation="nearest")
+        plt.imshow(self._image, cmap='gray', interpolation="nearest")
         plt.pause(0.05)
 
     def step(self, action):
@@ -133,6 +141,8 @@ class Catch:
                 self._objects.remove(other)
                 if other.reward == 1:
                     self._objects.append(_Object(self._random_position(), 1, _GREEN, 1, 'food'))
+                else:
+                    self._objects.append(_Object(self._random_position(), 1, _RED, -1, 'fire'))
                 return other.reward, done
         return 0, done
 
@@ -141,11 +151,11 @@ class Catch:
 
 if __name__ == "__main__":
     import random
-    env = Catch(84, 84, 4)
+    env = Avoid(84, 84, 4)
     state = env.reset()
     done = False
     while not done:
         env.render()
-        action = random.randrange(env.get_num_actions())
+        action = random.randint(0, env.get_num_actions()-1)
         state, reward, done, info = env.step(action)
         print(reward, done)
