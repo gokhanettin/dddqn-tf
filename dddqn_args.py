@@ -33,8 +33,8 @@ flags.DEFINE_string('trainer',
                     '| AdadeltaOptimizer | AdagradOptimizer | GradientDescentOptimizer]')
 
 flags.DEFINE_string('reward_adjustment_method',
-                    'map',
-                    'Method to adjust reward for training: [map | clip | none]')
+                    'scale',
+                    'Method to adjust reward for training: [clip | scale | none]')
 
 flags.DEFINE_integer('width',
                      84,

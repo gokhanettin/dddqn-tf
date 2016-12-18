@@ -26,15 +26,15 @@ def static_vars(**kwargs):
 
 @static_vars(max_reward=0.0)
 def adjust_reward(reward):
-    if F.reward_adjustment_method == "map":
+    if F.reward_adjustment_method == "clip":
+        adjusted_reward = np.clip(reward, -1.0, 1.0)
+    elif F.reward_adjustment_method == "scale":
         adjust_reward.max_reward = max(reward, adjust_reward.max_reward)
         if adjust_reward.max_reward == 0.0:
             upper_clip = 1.0
         else:
             upper_clip = reward/adjust_reward.max_reward
         adjusted_reward = np.clip(reward, -1.0, upper_clip)
-    elif F.reward_adjustment_method == "clip":
-        adjusted_reward = np.clip(reward, -1.0, 1.0)
     elif F.reward_adjustment_method == "none":
         adjusted_reward = reward
     return adjusted_reward
@@ -262,7 +262,3 @@ def main(_):
 
 if __name__ == "__main__":
     tf.app.run()
-
-
-
-
