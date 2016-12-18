@@ -210,7 +210,7 @@ def train(session, graph_ops, nactions, saver):
             for summary_str in summary_str_lists:
                 writer.add_summary(summary_str, ep_counter)
 
-            fmt = "STEP {:8d} | EPISODE {:6d} | REWARD {:2f} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
+            fmt = "STEP {:8d} | EPISODE {:6d} | REWARD {:.2f} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
             print(fmt.format(step, ep_counter, ep_reward, ep_avrg_max_q, epsilon))
 
         ex_buffer.add(ep_buffer.buff)
