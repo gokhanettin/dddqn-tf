@@ -23,10 +23,10 @@ class MyEnvironment:
         return self._env.get_num_actions()
 
     def monitor_start(self, path):
-        print("monitor_start not implemented for custom environments")
+        self._env.monitor_start(path)
 
     def monitor_close(self):
-        print("monitor_close not implemented for custom environments")
+        self._env.monitor_close()
 
 if __name__ == "__main__":
     import random

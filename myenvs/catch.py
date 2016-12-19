@@ -6,6 +6,7 @@ import scipy.misc
 from skimage.transform import resize
 from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
+import matplotlib.animation as animation
 
 
 GRIDSIZE = 5
@@ -30,14 +31,15 @@ class _Object:
 
 class Catch:
     def __init__(self, height, width, nchannels):
-        self._sizeX = GRIDSIZE
-        self._sizeY = GRIDSIZE
+        self._size_x = GRIDSIZE
+        self._size_y = GRIDSIZE
         self._objects = []
         self._step_count = 0
         self._max_step = GRIDSIZE * GRIDSIZE * 2
         self._width = width
         self._height = height
         self._nchannels = nchannels
+        self._writer = None
         self.reset()
 
     def reset(self):
@@ -49,8 +51,7 @@ class Catch:
 
         self._rendered = False
         self._state = deque(maxlen=self._nchannels-1)
-        x = self._mk_frame()
-        x = self._get_preprocessed_frame(x)
+        x = self._get_preprocessed_frame()
         s = np.stack(([x] * self._nchannels), axis = 0)
         for _ in range(self._nchannels-1):
             self._state.append(x)
@@ -60,16 +61,17 @@ class Catch:
         if not self._rendered:
             self._rendered = True
             self._imshow = plt.imshow(self._frame, interpolation="nearest")
-            plt.title("Catch")
+            plt.title("Catch Game")
         else:
             self._imshow.set_data(self._frame)
-            plt.pause(0.3)
+        plt.pause(0.3)
+        if self._writer:
+            self._writer.grab_frame()
 
     def step(self, action):
         self._move(action)
         r, done = self._check_goal()
-        x = self._mk_frame()
-        x = self._get_preprocessed_frame(x)
+        x = self._get_preprocessed_frame()
         previous_frames = np.array(self._state)
         s = np.empty((self._nchannels, self._height, self._width))
         s[:self._nchannels-1] = previous_frames
@@ -81,8 +83,23 @@ class Catch:
         # up, down, right, left
         return 4
 
+    def monitor_start(self, path):
+        import os
+        os.makedirs(path)
+        video_file = os.path.join(path, "catch_video.mp4")
+        FFMpegWriter = animation.writers['ffmpeg']
+        metadata = dict(title='Catch Game', artist='DRL',
+                        comment='Simple Grid Game for DRL')
+        self._writer = FFMpegWriter(fps=2, metadata=metadata)
+
+        fig = plt.figure()
+        self._writer.setup(fig, video_file, 100)
+
+    def monitor_close(self):
+        self._writer.finish()
+
     def _mk_frame(self):
-        a = np.ones([self._sizeY+2, self._sizeX+2, 3])
+        a = np.ones([self._size_y+2, self._size_x+2, 3])
         a[1:-1, 1:-1, :] = 0
         for obj in self._objects:
             a[obj.y+1:obj.y+obj.size+1, obj.x+1:obj.x+obj.size+1, obj.channel] = 1
@@ -93,7 +110,7 @@ class Catch:
         return self._frame
 
     def _random_position(self):
-        iterables = [ range(self._sizeX), range(self._sizeY)]
+        iterables = [ range(self._size_x), range(self._size_y)]
         points = []
         for point in itertools.product(*iterables):
             points.append(point)
@@ -112,11 +129,11 @@ class Catch:
         agentY = agent.y
         if direction == _UP and agent.y >= 1:
             agent.y -= 1
-        if direction == _DOWN and agent.y <= self._sizeY-2:
+        if direction == _DOWN and agent.y <= self._size_y-2:
             agent.y += 1
         if direction == _LEFT and agent.x >= 1:
             agent.x -= 1
-        if direction == _RIGHT and agent.x <= self._sizeX-2:
+        if direction == _RIGHT and agent.x <= self._size_x-2:
             agent.x += 1
         self._objects[0] = agent
 
@@ -141,16 +158,19 @@ class Catch:
                 return other.reward, done
         return 0, done
 
-    def _get_preprocessed_frame(self, x):
-        return resize(rgb2gray(x), (self._width, self._height))
+    def _get_preprocessed_frame(self):
+        self._mk_frame()
+        return resize(rgb2gray(self._frame), (self._width, self._height))
 
 if __name__ == "__main__":
     import random
     env = Catch(84, 84, 4)
     state = env.reset()
     done = False
+    env.monitor_start("/tmp/catch/eval")
     while not done:
         env.render()
-        action = random.randrange(env.get_num_actions())
-        state, reward, done, info = env.step(action)
+        rand_action = random.randrange( env.get_num_actions())
+        state, reward, done, info = env.step(rand_action)
         print(reward, done)
+    env.monitor_close()
