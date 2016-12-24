@@ -186,7 +186,7 @@ def train(session, graph_ops, nactions, saver):
 
     env = make_environment(F.game, F.width, F.height, F.num_channels)
     step = 0
-    drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
+    drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_episodes
     epsilon = F.start_epsilon
     ex_buffer = ExperienceBuffer(F.experience_buffer_size)
     avrg_reward = 0.0
@@ -205,7 +205,7 @@ def train(session, graph_ops, nactions, saver):
                                     feed_dict={op_current_state: [current_state]})
             action = action_array[0]
             avrg_max_q += np.max(online_q_values)
-            if random.random() < epsilon or step < F.pre_training_steps:
+            if random.random() < epsilon or ep_counter < F.pre_training_episodes:
                 action = random.randrange(nactions)
                 ep_avrg_max_q += np.max(online_q_values)
 
@@ -215,10 +215,7 @@ def train(session, graph_ops, nactions, saver):
             ep_buffer.add(np.reshape(
                 np.array([current_state, action, adjusted_reward, next_state, done]), [1, 5]))
 
-            if step > F.pre_training_steps:
-                if epsilon > F.final_epsilon:
-                    epsilon -= drop_epsilon
-
+            if ep_counter > F.pre_training_episodes:
                 if step % F.update_frequency == 0:
                     batch = ex_buffer.sample(F.batch_size)
                     next_state_batch = np.vstack(batch[:, 3])
@@ -241,6 +238,9 @@ def train(session, graph_ops, nactions, saver):
             current_state = next_state
             if done:
                 break
+
+        if ep_counter > F.pre_training_episodes and epsilon > F.final_epsilon:
+            epsilon -= drop_epsilon
 
         ep_avrg_max_q /= ep_step
         avrg_reward += ep_reward
