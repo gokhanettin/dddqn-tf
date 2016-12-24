@@ -191,7 +191,7 @@ def train(session, graph_ops, nactions, saver):
     ex_buffer = ExperienceBuffer(F.experience_buffer_size)
     avrg_reward = 0.0
     avrg_max_q = 0.0
-    for ep_counter in range(F.num_training_episodes):
+    for ep_counter in range(F.num_training_episodes + 1):
         ep_buffer = ExperienceBuffer(F.experience_buffer_size)
         ep_step = 0
         ep_reward = 0.0
@@ -266,6 +266,9 @@ def train(session, graph_ops, nactions, saver):
             csv_writer.writerow((step, ep_counter, validation_avrg_reward, validation_avrg_max_q,
                                  avrg_reward, avrg_max_q, epsilon))
             csv_file.flush()
+            avrg_reward = 0.0
+            avrg_max_q = 0.0
+
 
         ex_buffer.add(ep_buffer.buff)
         if ep_counter % F.checkpoint_interval == 0:

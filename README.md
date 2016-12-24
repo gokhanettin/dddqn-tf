@@ -11,9 +11,9 @@ python dddqn.py train \
 my-Catch  \
 --experiment=catch1 \
 --pre_training_episodes=1000 \
---num_training_episodes=10000 \
---num_validation_episodes=5 \
---epsilon_annealing_episodes=5000 \
+--num_training_episodes=6000 \
+--num_validation_episodes=20 \
+--epsilon_annealing_episodes=2000 \
 --experience_buffer_size=50000 \
 --summary_interval=20 \
 --checkpoint_interval=1000

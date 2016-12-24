@@ -11,9 +11,9 @@ def get_arguments():
                               help="Name of the current experiment.")
     train_parser.add_argument("--pre_training_episodes", type=int, default=1000,
                               help="Number of episodes with random actions before training.")
-    train_parser.add_argument("--num_training_episodes", type=int, default=10000,
+    train_parser.add_argument("--num_training_episodes", type=int, default=6000,
                               help="Number of training episodes.")
-    train_parser.add_argument("--num_validation_episodes", type=int, default=5,
+    train_parser.add_argument("--num_validation_episodes", type=int, default=20,
                               help="Number of validation episodes.")
     train_parser.add_argument("--batch_size", type=int, default=32,
                               help="Minibatch size for network update.")
@@ -21,7 +21,7 @@ def get_arguments():
                               help="Initial target network update rate.")
     train_parser.add_argument("--final_epsilon", type=float, default=0.1,
                               help="Final target network update rate.")
-    train_parser.add_argument("--epsilon_annealing_episodes", type=int, default=5000,
+    train_parser.add_argument("--epsilon_annealing_episodes", type=int, default=2000,
                               help="Number of episodes to decay epsilon to its final value.")
     train_parser.add_argument("--experience_buffer_size", type=int, default=50000,
                               help="How many experience items the buffer can hold.")
