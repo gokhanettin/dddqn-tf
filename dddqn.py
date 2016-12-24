@@ -203,11 +203,10 @@ def train(session, graph_ops, nactions, saver):
             ep_step += 1
             action_array, online_q_values = session.run([op_predict_action, op_online_q_values],
                                     feed_dict={op_current_state: [current_state]})
+            ep_avrg_max_q += np.max(online_q_values)
             action = action_array[0]
-            avrg_max_q += np.max(online_q_values)
             if random.random() < epsilon or ep_counter < F.pre_training_episodes:
                 action = random.randrange(nactions)
-                ep_avrg_max_q += np.max(online_q_values)
 
             state, reward, done, _ = env.step(action)
             next_state = get_flat_state(state)
