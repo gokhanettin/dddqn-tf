@@ -3,6 +3,7 @@
 from __future__ import print_function, division
 import os
 import random
+import csv
 import tensorflow as tf
 import tflearn
 import numpy as np
@@ -86,11 +87,11 @@ def get_graph_ops(nactions):
     loss = tf.reduce_mean(td_error)
 
     optimizers = {
-        'AdamOptimizer': tf.train.AdamOptimizer(learning_rate=F.alpha),
-        'RMSPropOptimizer': tf.train.RMSPropOptimizer(learning_rate=F.alpha),
-        'AdadeltaOptimizer': tf.train.AdadeltaOptimizer(learning_rate=F.alpha),
-        'AdagradOptimizer': tf.train.AdadeltaOptimizer(learning_rate=F.alpha),
-        'GradientDescentOptimizer': tf.train.GradientDescentOptimizer(learning_rate=F.alpha)
+        'adam': tf.train.AdamOptimizer(learning_rate=F.alpha),
+        'rmsprop': tf.train.RMSPropOptimizer(learning_rate=F.alpha),
+        'adadelta': tf.train.AdadeltaOptimizer(learning_rate=F.alpha),
+        'adagrad': tf.train.AdadeltaOptimizer(learning_rate=F.alpha),
+        'dradientdescent': tf.train.GradientDescentOptimizer(learning_rate=F.alpha)
     }
 
     trainer = optimizers[F.trainer]
@@ -109,7 +110,8 @@ def get_graph_ops(nactions):
 
 
 def get_summary_ops():
-    summary_tags = ['Avrg Reward', 'Avrg Max Q', 'Epsilon']
+    summary_tags = ['Training Avrg Reward', 'Training Avrg Max Q',
+                    'Validation Avrg Reward', 'Validation Avrg Max Q', 'Epsilon']
     summaries = {}
     summary_placeholders = {}
     for tag in summary_tags:
@@ -117,8 +119,40 @@ def get_summary_ops():
         summaries[tag] = tf.scalar_summary(tag, summary_placeholders[tag])
     return summary_tags, summary_placeholders, summaries
 
+def validate(session, graph_ops, nactions):
+    env = make_environment(F.game, F.width, F.height, F.num_channels)
+
+    op_current_state = graph_ops['current_state']
+    op_online_q_values = graph_ops['online_q_values']
+
+    avrg_reward = 0.0
+    avrg_max_q = 0.0
+    for _ in range(F.num_validation_episodes):
+        state = env.reset()
+        state = get_flat_state(state)
+        ep_reward = 0.0
+        ep_max_q = 0.0
+        done = False
+        while not done:
+            online_q_values = session.run(op_online_q_values,
+                                          feed_dict={op_current_state: [state]})
+            action = np.argmax(online_q_values)
+            state, reward, done, _ = env.step(action)
+            state = get_flat_state(state)
+            ep_max_q += np.max(online_q_values)
+            ep_reward += reward
+
+        avrg_reward += ep_reward
+        avrg_max_q += ep_max_q
+
+    avrg_reward /= F.num_validation_episodes
+    avrg_max_q /= F.num_validation_episodes
+    return avrg_reward, avrg_max_q
+
+
+
 def train(session, graph_ops, nactions, saver):
-    if F.load_model:
+    if F.checkpoint_path:
         print('Loading pre-trained model', F.checkpoint_path)
         saver.restore(session, F.checkpoint_path)
 
@@ -127,6 +161,12 @@ def train(session, graph_ops, nactions, saver):
     writer = tf.train.SummaryWriter(summary_save_path, session.graph)
     if not os.path.exists(F.checkpoint_dir):
         os.makedirs(F.checkpoint_dir)
+
+    csv_file = open(summary_save_path + "/plot.csv", "w")
+    csv_writer = csv.writer(csv_file)
+    csv_writer.writerow(("step", "episode", "validation_reward",
+                         "validation_max_q", "train_reward", "train_max_q", "epsilon"))
+    csv_file.flush()
 
     op_current_state = graph_ops['current_state']
     op_online_q_values = graph_ops['online_q_values']
@@ -161,9 +201,10 @@ def train(session, graph_ops, nactions, saver):
             action_array, online_q_values = session.run([op_predict_action, op_online_q_values],
                                     feed_dict={op_current_state: [current_state]})
             action = action_array[0]
-            ep_avrg_max_q += np.max(online_q_values)
+            avrg_max_q += np.max(online_q_values)
             if random.random() < epsilon or step < F.pre_training_steps:
                 action = random.randrange(nactions)
+                ep_avrg_max_q += np.max(online_q_values)
 
             state, reward, done, _ = env.step(action)
             next_state = get_flat_state(state)
@@ -198,14 +239,15 @@ def train(session, graph_ops, nactions, saver):
             if done:
                 break
 
-        ep_avrg_max_q /= ep_step
+        avrg_max_q /= ep_step
 
         avrg_reward += ep_reward
         avrg_max_q += ep_avrg_max_q
         if ep_counter % F.summary_interval == 0:
             avrg_reward /= F.summary_interval
             avrg_max_q /= F.summary_interval
-            stats = [avrg_reward, avrg_max_q, epsilon]
+            validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, nactions)
+            stats = [avrg_reward, avrg_max_q, validation_avrg_reward, validation_avrg_max_q, epsilon]
             tag_dict = {}
             for index, tag in enumerate(summary_tags):
                 tag_dict[tag] = stats[index]
@@ -217,12 +259,17 @@ def train(session, graph_ops, nactions, saver):
                 writer.add_summary(summary_str, ep_counter)
 
             fmt = "STEP {:8d} | EPISODE {:6d} | AVRG_REWARD {:.2f} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
-            print(fmt.format(step, ep_counter, avrg_reward, avrg_max_q, epsilon))
+            print(fmt.format(step, ep_counter, stats[2], stats[3], stats[4]))
+
+            csv_writer.writerow((step, ep_counter, validation_avrg_reward, validation_avrg_max_q,
+                                 avrg_reward, avrg_max_q, epsilon))
+            csv_file.flush()
 
         ex_buffer.add(ep_buffer.buff)
         if ep_counter % F.checkpoint_interval == 0:
             saver.save(session, F.checkpoint_dir + "/"
                         + F.experiment + ".ckpt", global_step=ep_counter)
+    csv_file.close()
 
 def test(session, graph_ops, saver):
     print('Loading pre-trained model', F.checkpoint_path)
@@ -249,16 +296,14 @@ def test(session, graph_ops, saver):
         print("EPISODE REWARD:", ep_reward)
     env.monitor_close()
 
-def main(_):
+if __name__ == "__main__":
+    print(F)
     with tf.Session() as session:
         nactions = get_num_actions()
         graph_ops = get_graph_ops(nactions)
         saver = tf.train.Saver()
 
-        if F.testing:
+        if F.subcommand == "test":
             test(session, graph_ops, saver)
-        else:
+        elif F.subcommand == "train":
             train(session, graph_ops, nactions, saver)
-
-if __name__ == "__main__":
-    tf.app.run()
