@@ -132,8 +132,10 @@ def validate(session, graph_ops, nactions):
         state = get_flat_state(state)
         ep_reward = 0.0
         ep_max_q = 0.0
+        ep_step = 0
         done = False
         while not done:
+            ep_step += 1
             online_q_values = session.run(op_online_q_values,
                                           feed_dict={op_current_state: [state]})
             action = np.argmax(online_q_values)
@@ -142,6 +144,7 @@ def validate(session, graph_ops, nactions):
             ep_max_q += np.max(online_q_values)
             ep_reward += reward
 
+        ep_max_q /= ep_step
         avrg_reward += ep_reward
         avrg_max_q += ep_max_q
 
@@ -239,8 +242,7 @@ def train(session, graph_ops, nactions, saver):
             if done:
                 break
 
-        avrg_max_q /= ep_step
-
+        ep_avrg_max_q /= ep_step
         avrg_reward += ep_reward
         avrg_max_q += ep_avrg_max_q
         if ep_counter % F.summary_interval == 0:
@@ -275,7 +277,7 @@ def test(session, graph_ops, saver):
     print('Loading pre-trained model', F.checkpoint_path)
     saver.restore(session, F.checkpoint_path)
     env = make_environment(F.game, F.width, F.height, F.num_channels)
-    env.monitor_start(F.eval_dir+"/"+F.experiment+"/eval")
+    env.monitor_start(F.eval_dir)
 
     op_current_state = graph_ops['current_state']
     op_online_q_values = graph_ops['online_q_values']
@@ -297,7 +299,6 @@ def test(session, graph_ops, saver):
     env.monitor_close()
 
 if __name__ == "__main__":
-    print(F)
     with tf.Session() as session:
         nactions = get_num_actions()
         graph_ops = get_graph_ops(nactions)

@@ -9,11 +9,11 @@ def get_arguments():
                               help="Environment id such as Breakout-v0, my-Catch etc.")
     train_parser.add_argument("--experiment", default="experiment",
                               help="Name of the current experiment.")
-    train_parser.add_argument("--pre_training_steps", type=int, default=1000000,
+    train_parser.add_argument("--pre_training_steps", type=int, default=10000,
                               help="Number of random steps before training.")
-    train_parser.add_argument("--num_training_episodes", type=int, default=1000000,
+    train_parser.add_argument("--num_training_episodes", type=int, default=10000,
                               help="Number of training episodes.")
-    train_parser.add_argument("--num_validation_episodes", type=int, default=10,
+    train_parser.add_argument("--num_validation_episodes", type=int, default=5,
                               help="Number of validation episodes.")
     train_parser.add_argument("--batch_size", type=int, default=32,
                               help="Minibatch size for network update.")
@@ -21,7 +21,7 @@ def get_arguments():
                               help="Initial target network update rate.")
     train_parser.add_argument("--final_epsilon", type=float, default=0.1,
                               help="Final target network update rate.")
-    train_parser.add_argument("--epsilon_annealing_steps", type=int, default=100000,
+    train_parser.add_argument("--epsilon_annealing_steps", type=int, default=50000,
                               help="Number of steps to decay epsilon to its final value.")
     train_parser.add_argument("--experience_buffer_size", type=int, default=50000,
                               help="How many experience items the buffer can hold.")
@@ -54,15 +54,15 @@ def get_arguments():
                               help="Directory to save checkpoints.")
     train_parser.add_argument("--summary_interval", metavar="N", type=int, default=20,
                               help="Save training summary every N episodes")
-    train_parser.add_argument("--checkpoint_interval", metavar="N", type=int, default=10,
+    train_parser.add_argument("--checkpoint_interval", metavar="N", type=int, default=1000,
                               help="Save a checkpoint every N episodes")
 
     play_parser = subparsers.add_parser("test")
-    play_parser.add_argument("environment",
+    play_parser.add_argument("game",
                               help="Environment id such as Breakout-v0, my-Catch etc.")
     play_parser.add_argument("checkpoint_path",
                               help="Checkpoint path to load model")
-    play_parser.add_argument("--eval_dir", default="/tmp",
+    play_parser.add_argument("--eval_dir", default="/tmp/eval",
                               help="Directory to save evaluation results.")
     play_parser.add_argument("--num_testing_episodes", metavar="n", type=int, default=1,
                               help="Play the game n times.")
