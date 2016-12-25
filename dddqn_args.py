@@ -74,7 +74,7 @@ def get_arguments():
                               help="Resized screen height.")
     test_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
-                              default="rmsprop",
+                              default="adam",
                               help="Optimizer to train the network.")
     test_parser.add_argument("--alpha", type=float, default=0.00025,
                               help="Learning rate.")
