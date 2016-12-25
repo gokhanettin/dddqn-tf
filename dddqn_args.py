@@ -19,8 +19,6 @@ def get_arguments():
                               help="Number of validation steps after each epoch.")
     train_parser.add_argument("--batch_size", type=int, default=32,
                               help="Minibatch size for network update.")
-    train_parser.add_argument("--test_epsilon", type=float, default=0.05,
-                              help="e-greedy epsilon for test.")
     train_parser.add_argument("--validation_epsilon", type=float, default=0.05,
                               help="e-greedy epsilon for validation.")
     train_parser.add_argument("--start_epsilon", type=float, default=1.0,
@@ -66,6 +64,8 @@ def get_arguments():
                               help="Environment id such as Breakout-v0, my-Catch etc.")
     test_parser.add_argument("checkpoint_path",
                               help="Checkpoint path to load model")
+    train_parser.add_argument("--test_epsilon", type=float, default=0.05,
+                              help="e-greedy epsilon for test.")
     test_parser.add_argument("--eval_dir", default="/tmp/eval",
                               help="Directory to save evaluation results.")
     test_parser.add_argument("--num_testing_episodes", metavar="n", type=int, default=1,
