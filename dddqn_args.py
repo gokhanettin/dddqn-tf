@@ -31,7 +31,7 @@ def get_arguments():
                               help="Frequency to update params.")
     train_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
-                              default="rmsprop",
+                              default="adam",
                               help="Optimizer to train the network.")
     train_parser.add_argument("--reward_adjustment_method", choices=['clip', 'scale', 'none'],
                               default="clip",
