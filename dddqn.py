@@ -198,7 +198,7 @@ def train(session, graph_ops, nactions, saver):
     training_avrg_max_q = 0.0
     ep_counter = 0
     ep_step = 0
-    for epoch in range(F.num_epochs):
+    for epoch in range(F.num_epochs+1):
         for _ in range(F.num_training_steps):
             total_step += 1
             ep_step += 1
