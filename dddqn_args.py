@@ -64,7 +64,7 @@ def get_arguments():
                               help="Environment id such as Breakout-v0, my-Catch etc.")
     test_parser.add_argument("checkpoint_path",
                               help="Checkpoint path to load model")
-    train_parser.add_argument("--test_epsilon", type=float, default=0.05,
+    test_parser.add_argument("--test_epsilon", type=float, default=0.05,
                               help="e-greedy epsilon for test.")
     test_parser.add_argument("--eval_dir", default="/tmp/eval",
                               help="Directory to save evaluation results.")
