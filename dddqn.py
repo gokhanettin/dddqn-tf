@@ -141,7 +141,7 @@ def validate(session, graph_ops, env):
             state = get_flat_state(state)
             ep_max_q += np.max(online_q_values)
             ep_reward += reward
-            if ep_step >= 100:
+            if ep_step >= 50:
                 break
 
         ep_max_q /= ep_step
@@ -235,7 +235,7 @@ def train(session, graph_ops, nactions, saver):
 
             ep_reward += reward
             current_state = next_state
-            if done or ep_step >= 100:
+            if done or ep_step >= 50:
                 break
 
         if ep_counter > F.pre_training_episodes and epsilon > F.final_epsilon:
