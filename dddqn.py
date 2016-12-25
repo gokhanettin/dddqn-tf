@@ -137,6 +137,8 @@ def validate(session, graph_ops, env):
         online_q_values = session.run(op_online_q_values,
                                         feed_dict={op_current_state: [state]})
         action = np.argmax(online_q_values)
+        if random.random() < F.validation_epsilon:
+            action = random.randrange(nactions)
         state, reward, done, _ = env.step(action)
         state = get_flat_state(state)
         ep_reward += reward
@@ -200,9 +202,9 @@ def train(session, graph_ops, nactions, saver):
         for _ in range(F.num_training_steps):
             total_step += 1
             ep_step += 1
-            action_array, online_q_values = session.run([op_predict_action, op_online_q_values],
+            online_q_values = session.run([op_online_q_values],
                                     feed_dict={op_current_state: [current_state]})
-            action = action_array[0]
+            action = np.argmax(online_q_values)
             if random.random() < epsilon or total_step <= F.num_random_steps:
                 action = random.randrange(nactions)
             state, reward, done, _ = env.step(action)
@@ -276,7 +278,7 @@ def train(session, graph_ops, nactions, saver):
                         + F.experiment + ".ckpt", global_step=epoch)
     csv_file.close()
 
-def test(session, graph_ops, saver):
+def test(session, graph_ops, naction, saver):
     print('Loading pre-trained model', F.checkpoint_path)
     saver.restore(session, F.checkpoint_path)
     env = make_environment(F.game, F.width, F.height, F.num_channels)
@@ -295,6 +297,8 @@ def test(session, graph_ops, saver):
             online_q_values = session.run(op_online_q_values,
                                           feed_dict={op_current_state: [state]})
             action = np.argmax(online_q_values)
+            if random.random() < F.test_epsilon:
+                action = random.randrange(nactions)
             state, reward, done, _ = env.step(action)
             state = get_flat_state(state)
             ep_reward += reward
@@ -308,6 +312,6 @@ if __name__ == "__main__":
         saver = tf.train.Saver()
 
         if F.subcommand == "test":
-            test(session, graph_ops, saver)
+            test(session, graph_ops, nactions, saver)
         elif F.subcommand == "train":
             train(session, graph_ops, nactions, saver)

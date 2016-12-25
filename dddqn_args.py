@@ -19,10 +19,14 @@ def get_arguments():
                               help="Number of validation steps after each epoch.")
     train_parser.add_argument("--batch_size", type=int, default=32,
                               help="Minibatch size for network update.")
+    train_parser.add_argument("--test_epsilon", type=float, default=0.05,
+                              help="e-greedy epsilon for test.")
+    train_parser.add_argument("--validation_epsilon", type=float, default=0.05,
+                              help="e-greedy epsilon for validation.")
     train_parser.add_argument("--start_epsilon", type=float, default=1.0,
-                              help="Initial target network update rate.")
+                              help="Initial epsilon during training.")
     train_parser.add_argument("--final_epsilon", type=float, default=0.1,
-                              help="Final target network update rate.")
+                              help="Final epsilon during training.")
     train_parser.add_argument("--epsilon_annealing_steps", type=int, default=10000,
                               help="Number of steps to decay epsilon to its final value.")
     train_parser.add_argument("--experience_buffer_size", type=int, default=50000,
