@@ -110,8 +110,9 @@ def get_graph_ops(nactions):
 
 
 def get_summary_ops():
-    summary_tags = ['Training Avrg Reward', 'Training Avrg Max Q',
-                    'Validation Avrg Reward', 'Validation Avrg Max Q', 'Epsilon']
+    summary_tags = ['Validation Avrg Reward', 'Validation Avrg Max Q',
+                    'Training Avrg Reward', 'Training Avrg Max Q',
+                    'Epsilon']
     summaries = {}
     summary_placeholders = {}
     for tag in summary_tags:
@@ -123,35 +124,33 @@ def validate(session, graph_ops, env):
     op_current_state = graph_ops['current_state']
     op_online_q_values = graph_ops['online_q_values']
 
+    state = env.reset()
+    state = get_flat_state(state)
+    ep_reward = 0.0
+    ep_max_q = 0.0
     avrg_reward = 0.0
     avrg_max_q = 0.0
-    for _ in range(F.num_validation_episodes):
-        state = env.reset()
+    ep_counter = 0
+    ep_step = 0
+    for _ in range(F.num_validation_steps):
+        ep_step += 1
+        online_q_values = session.run(op_online_q_values,
+                                        feed_dict={op_current_state: [state]})
+        action = np.argmax(online_q_values)
+        state, reward, done, _ = env.step(action)
         state = get_flat_state(state)
-        ep_reward = 0.0
-        ep_max_q = 0.0
-        ep_step = 0
-        while True:
-            ep_step += 1
-            online_q_values = session.run(op_online_q_values,
-                                          feed_dict={op_current_state: [state]})
-            action = np.argmax(online_q_values)
-            state, reward, done, _ = env.step(action)
+        ep_reward += reward
+        ep_max_q += (np.max(online_q_values) - ep_max_q) / ep_step
+        if done:
+            ep_counter += 1
+            ep_step = 0
+            state = env.reset()
             state = get_flat_state(state)
-            ep_max_q += np.max(online_q_values)
-            ep_reward += reward
-            if done or ep_step >= 10000:
-                break
-
-        ep_max_q /= ep_step
-        avrg_reward += ep_reward
-        avrg_max_q += ep_max_q
-
-    avrg_reward /= F.num_validation_episodes
-    avrg_max_q /= F.num_validation_episodes
+            avrg_reward += (ep_reward - avrg_reward) / ep_counter
+            avrg_max_q += (ep_max_q - avrg_max_q) / ep_counter
+            ep_reward = 0.0
+            ep_max_q = 0.0
     return avrg_reward, avrg_max_q
-
-
 
 def train(session, graph_ops, nactions, saver):
     if F.checkpoint_path:
@@ -166,7 +165,7 @@ def train(session, graph_ops, nactions, saver):
 
     csv_file = open(summary_save_path + "/plot.csv", "w")
     csv_writer = csv.writer(csv_file)
-    csv_writer.writerow(("step", "episode", "validation_reward",
+    csv_writer.writerow(("epoch", "step", "episode", "validation_reward",
                          "validation_max_q", "train_reward", "train_max_q", "epsilon"))
     csv_file.flush()
 
@@ -184,38 +183,42 @@ def train(session, graph_ops, nactions, saver):
     summary_tags, op_summary_placeholders, op_summaries = get_summary_ops()
 
     env = make_environment(F.game, F.width, F.height, F.num_channels)
-    step = 0
-    drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_episodes
+    drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
     epsilon = F.start_epsilon
-    ex_buffer = ExperienceBuffer(F.experience_buffer_size)
-    avrg_reward = 0.0
-    avrg_max_q = 0.0
-    for ep_counter in range(F.num_training_episodes + 1):
-        ep_buffer = ExperienceBuffer(F.experience_buffer_size)
-        ep_step = 0
-        ep_reward = 0.0
-        ep_avrg_max_q = 0.0
-        state = env.reset()
-        current_state = get_flat_state(state)
-        while True:
-            step += 1
+    experience_buffer = ExperienceBuffer(F.experience_buffer_size)
+    total_step = 0
+    state = env.reset()
+    current_state = get_flat_state(state)
+    episode_buffer = ExperienceBuffer(F.experience_buffer_size)
+    ep_reward = 0.0
+    ep_max_q = 0.0
+    training_avrg_reward = 0.0
+    training_avrg_max_q = 0.0
+    ep_counter = 0
+    ep_step = 0
+    for epoch in range(F.num_epochs):
+        for _ in range(F.num_training_steps):
+            total_step += 1
             ep_step += 1
             action_array, online_q_values = session.run([op_predict_action, op_online_q_values],
                                     feed_dict={op_current_state: [current_state]})
-            ep_avrg_max_q += np.max(online_q_values)
             action = action_array[0]
-            if random.random() < epsilon or ep_counter < F.pre_training_episodes:
+            if random.random() < epsilon or total_step <= F.num_random_steps:
                 action = random.randrange(nactions)
-
             state, reward, done, _ = env.step(action)
             next_state = get_flat_state(state)
             adjusted_reward = adjust_reward(reward)
-            ep_buffer.add(np.reshape(
-                np.array([current_state, action, adjusted_reward, next_state, done]), [1, 5]))
 
-            if ep_counter > F.pre_training_episodes:
-                if step % F.update_frequency == 0:
-                    batch = ex_buffer.sample(F.batch_size)
+            if total_step <= F.num_random_steps:
+                experience_buffer.add(np.reshape(
+                    np.array([current_state, action, adjusted_reward, next_state, done]), [1, 5]))
+            else:
+                episode_buffer.add(np.reshape(
+                    np.array([current_state, action, adjusted_reward, next_state, done]), [1, 5]))
+                if epsilon > F.final_epsilon:
+                    epsilon -= drop_epsilon
+                if total_step % F.update_frequency == 0:
+                    batch = experience_buffer.sample(F.batch_size)
                     next_state_batch = np.vstack(batch[:, 3])
                     current_state_batch = np.vstack(batch[:, 0])
                     action_batch = batch[:, 1]
@@ -231,47 +234,46 @@ def train(session, graph_ops, nactions, saver):
                                            op_target: target,
                                            op_action: action_batch})
                     session.run(op_update_target_params)
-
-            ep_reward += reward
             current_state = next_state
-            if done or ep_step >= 10000:
-                break
+            ep_reward += reward
+            ep_max_q += (np.max(online_q_values) - ep_max_q) / ep_step
+            if done:
+                ep_counter += 1
+                ep_step = 0
+                state = env.reset()
+                current_state = get_flat_state(state)
+                experience_buffer.add(episode_buffer.buff)
+                episode_buffer = ExperienceBuffer(F.experience_buffer_size)
+                training_avrg_reward += (ep_reward - training_avrg_reward) / ep_counter
+                training_avrg_max_q += (ep_max_q - training_avrg_max_q) / ep_counter
+                ep_reward = 0.0
+                ep_max_q = 0.0
 
-        if ep_counter > F.pre_training_episodes and epsilon > F.final_epsilon:
-            epsilon -= drop_epsilon
+        validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, env)
+        stats = [validation_avrg_reward, validation_avrg_max_q,
+                 training_avrg_reward, training_avrg_max_q, epsilon]
+        tag_dict = {}
+        for index, tag in enumerate(summary_tags):
+            tag_dict[tag] = stats[index]
 
-        ep_avrg_max_q /= ep_step
-        avrg_reward += ep_reward
-        avrg_max_q += ep_avrg_max_q
-        if ep_counter % F.summary_interval == 0:
-            avrg_reward /= F.summary_interval
-            avrg_max_q /= F.summary_interval
-            validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, env)
-            stats = [avrg_reward, avrg_max_q, validation_avrg_reward, validation_avrg_max_q, epsilon]
-            tag_dict = {}
-            for index, tag in enumerate(summary_tags):
-                tag_dict[tag] = stats[index]
+        summary_str_lists = session.run([op_summaries[tag] for tag in tag_dict.keys()],
+            feed_dict={op_summary_placeholders[tag]: value for tag, value in tag_dict.items()})
 
-            summary_str_lists = session.run([op_summaries[tag] for tag in tag_dict.keys()],
-                feed_dict={op_summary_placeholders[tag]: value for tag, value in tag_dict.items()})
+        for summary_str in summary_str_lists:
+            writer.add_summary(summary_str, ep_counter)
 
-            for summary_str in summary_str_lists:
-                writer.add_summary(summary_str, ep_counter)
+        fmt = "EPOCH {:3d} | STEP {:8d} | EPISODE {:6d} | AVRG_REWARD {:.2f} | " + \
+        "AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
+        print(fmt.format(epoch, total_step, ep_counter, stats[0], stats[1], stats[4]))
 
-            fmt = "STEP {:8d} | EPISODE {:6d} | AVRG_REWARD {:.2f} | AVRG_MAX_Q {:.4f} | EPSILON {:.4f}"
-            print(fmt.format(step, ep_counter, stats[2], stats[3], stats[4]))
-
-            csv_writer.writerow((step, ep_counter, validation_avrg_reward, validation_avrg_max_q,
-                                 avrg_reward, avrg_max_q, epsilon))
-            csv_file.flush()
-            avrg_reward = 0.0
-            avrg_max_q = 0.0
+        csv_writer.writerow((epoch, total_step, ep_counter, stats[0], stats[1],
+                                stats[2], stats[3], stats[3]))
+        csv_file.flush()
 
 
-        ex_buffer.add(ep_buffer.buff)
-        if ep_counter % F.checkpoint_interval == 0:
+        if epoch % F.checkpoint_interval == 0:
             saver.save(session, F.checkpoint_dir + "/"
-                        + F.experiment + ".ckpt", global_step=ep_counter)
+                        + F.experiment + ".ckpt", global_step=epoch)
     csv_file.close()
 
 def test(session, graph_ops, saver):

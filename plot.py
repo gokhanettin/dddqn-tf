@@ -6,8 +6,8 @@ import matplotlib
 
 parser = argparse.ArgumentParser()
 parser.add_argument("csv_file")
-parser.add_argument("--x_axis", choices=['episode', 'step'],
-                    default="episode",
+parser.add_argument("--x_axis", choices=['epoch', 'step', 'episode'],
+                    default="epoch",
                     help="X axis of the plot")
 parser.add_argument("--y_axis", choices=['reward', 'maxq', 'epsilon'],
                     default="reward",
@@ -16,6 +16,7 @@ parser.add_argument("--y_axis", choices=['reward', 'maxq', 'epsilon'],
 args = parser.parse_args()
 
 dtype = [
+    ("epoch", "int"),
     ("step", "int"),
     ("episode", "int"),
     ("validation_reward", "float"),
@@ -28,6 +29,7 @@ dtype = [
 data = np.loadtxt(args.csv_file, skiprows=1, delimiter=",", dtype = dtype)
 
 labels = {
+    "epoch": "Epoch",
     "step": "Step",
     "episode": "Episode",
     "reward": "Avrg. Reward",

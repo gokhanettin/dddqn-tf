@@ -9,24 +9,26 @@ def get_arguments():
                               help="Environment id such as Breakout-v0, my-Catch etc.")
     train_parser.add_argument("--experiment", default="experiment",
                               help="Name of the current experiment.")
-    train_parser.add_argument("--pre_training_episodes", type=int, default=1000,
-                              help="Number of episodes with random actions before training.")
-    train_parser.add_argument("--num_training_episodes", type=int, default=6000,
-                              help="Number of training episodes.")
-    train_parser.add_argument("--num_validation_episodes", type=int, default=20,
-                              help="Number of validation episodes.")
+    train_parser.add_argument("--num_random_steps", type=int, default=10000,
+                              help="Number of steps with random actions before training.")
+    train_parser.add_argument("--num_epochs", type=int, default=200,
+                              help="Number of epochs.")
+    train_parser.add_argument("--num_training_steps", type=int, default=2500,
+                              help="Number of training steps per epoch.")
+    train_parser.add_argument("--num_validation_steps", type=int, default=1250,
+                              help="Number of validation steps after each epoch.")
     train_parser.add_argument("--batch_size", type=int, default=32,
                               help="Minibatch size for network update.")
     train_parser.add_argument("--start_epsilon", type=float, default=1.0,
                               help="Initial target network update rate.")
     train_parser.add_argument("--final_epsilon", type=float, default=0.1,
                               help="Final target network update rate.")
-    train_parser.add_argument("--epsilon_annealing_episodes", type=int, default=2000,
-                              help="Number of episodes to decay epsilon to its final value.")
+    train_parser.add_argument("--epsilon_annealing_steps", type=int, default=10000,
+                              help="Number of steps to decay epsilon to its final value.")
     train_parser.add_argument("--experience_buffer_size", type=int, default=50000,
                               help="How many experience items the buffer can hold.")
     train_parser.add_argument("--num_channels", type=int, default=4,
-                              help="How many pre-processed frames in a state")
+                              help="How many pre-processed frames in a state.")
     train_parser.add_argument("--update_frequency", type=int, default=4,
                               help="Frequency to update params.")
     train_parser.add_argument("--trainer",
@@ -52,10 +54,8 @@ def get_arguments():
                               help="Directory to save summaries.")
     train_parser.add_argument("--checkpoint_dir", default="/tmp/checkpoints",
                               help="Directory to save checkpoints.")
-    train_parser.add_argument("--summary_interval", metavar="N", type=int, default=20,
-                              help="Save training summary every N episodes")
-    train_parser.add_argument("--checkpoint_interval", metavar="N", type=int, default=1000,
-                              help="Save a checkpoint every N episodes")
+    train_parser.add_argument("--checkpoint_interval", metavar="N", type=int, default=50,
+                              help="Save a checkpoint every N epoch")
 
     test_parser = subparsers.add_parser("test")
     test_parser.add_argument("game",

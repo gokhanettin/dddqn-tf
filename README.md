@@ -58,13 +58,11 @@ Here is a training command.
 python dddqn.py train \
 my-Catch  \
 --experiment=catch1 \
---pre_training_episodes=1000 \
---num_training_episodes=6000 \
---num_validation_episodes=20 \
---epsilon_annealing_episodes=2000 \
---experience_buffer_size=50000 \
---summary_interval=20 \
---checkpoint_interval=1000
+--num_random_steps=10000 \
+--num_training_steps=2500 \
+--num_validation_steps=1250 \
+--epsilon_annealing_steps=10000 \
+--experience_buffer_size=50000
 ```
 
 See [dddqn_args.py][1] for all options.
