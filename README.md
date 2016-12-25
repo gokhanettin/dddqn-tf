@@ -61,7 +61,7 @@ my-Catch  \
 --num_random_steps=10000 \
 --num_training_steps=2500 \
 --num_validation_steps=1250 \
---epsilon_annealing_steps=10000 \
+--epsilon_annealing_steps=50000 \
 --experience_buffer_size=50000
 ```
 
