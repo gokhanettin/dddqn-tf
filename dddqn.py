@@ -119,9 +119,7 @@ def get_summary_ops():
         summaries[tag] = tf.scalar_summary(tag, summary_placeholders[tag])
     return summary_tags, summary_placeholders, summaries
 
-def validate(session, graph_ops, nactions):
-    env = make_environment(F.game, F.width, F.height, F.num_channels)
-
+def validate(session, graph_ops, env):
     op_current_state = graph_ops['current_state']
     op_online_q_values = graph_ops['online_q_values']
 
@@ -247,7 +245,7 @@ def train(session, graph_ops, nactions, saver):
         if ep_counter % F.summary_interval == 0:
             avrg_reward /= F.summary_interval
             avrg_max_q /= F.summary_interval
-            validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, nactions)
+            validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, env)
             stats = [avrg_reward, avrg_max_q, validation_avrg_reward, validation_avrg_max_q, epsilon]
             tag_dict = {}
             for index, tag in enumerate(summary_tags):
