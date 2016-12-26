@@ -184,12 +184,13 @@ def train(session, graph_ops, nactions, saver):
 
     summary_tags, op_summary_placeholders, op_summaries = get_summary_ops()
 
-    env = make_environment(F.game, F.width, F.height, F.num_channels)
+    training_env = make_environment(F.game, F.width, F.height, F.num_channels)
+    validation_env = make_environment(F.game, F.width, F.height, F.num_channels)
     drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
     epsilon = F.start_epsilon
     experience_buffer = ExperienceBuffer(F.experience_buffer_size)
     total_step = 0
-    state = env.reset()
+    state = training_env.reset()
     current_state = get_flat_state(state)
     episode_buffer = ExperienceBuffer(F.experience_buffer_size)
     ep_reward = 0.0
@@ -207,7 +208,7 @@ def train(session, graph_ops, nactions, saver):
             action = np.argmax(online_q_values)
             if random.random() < epsilon or total_step <= F.num_random_steps:
                 action = random.randrange(nactions)
-            state, reward, done, _ = env.step(action)
+            state, reward, done, _ = training_env.step(action)
             next_state = get_flat_state(state)
             adjusted_reward = adjust_reward(reward)
 
@@ -242,7 +243,7 @@ def train(session, graph_ops, nactions, saver):
             if done:
                 ep_counter += 1
                 ep_step = 0
-                state = env.reset()
+                state = training_env.reset()
                 current_state = get_flat_state(state)
                 experience_buffer.add(episode_buffer.buff)
                 episode_buffer = ExperienceBuffer(F.experience_buffer_size)
@@ -251,7 +252,7 @@ def train(session, graph_ops, nactions, saver):
                 ep_reward = 0.0
                 ep_max_q = 0.0
 
-        validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, env)
+        validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, validation_env)
         stats = [validation_avrg_reward, validation_avrg_max_q,
                  training_avrg_reward, training_avrg_max_q, epsilon]
         tag_dict = {}
