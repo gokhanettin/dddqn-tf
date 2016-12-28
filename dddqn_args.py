@@ -31,8 +31,10 @@ def get_arguments():
                               help="How many experience items the buffer can hold.")
     train_parser.add_argument("--num_channels", type=int, default=4,
                               help="How many pre-processed frames in a state.")
-    train_parser.add_argument("--update_frequency", type=int, default=4,
-                              help="Frequency to update params.")
+    train_parser.add_argument("--online_update_frequency", type=int, default=4,
+                              help="Frequency to update online params.")
+    train_parser.add_argument("--target_update_frequency", type=int, default=1000,
+                              help="Frequency to update target params.")
     train_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
                               default="adam",
@@ -48,7 +50,7 @@ def get_arguments():
                               help="Learning rate.")
     train_parser.add_argument("--gamma", type=float, default=0.99,
                               help="Discount factor.")
-    train_parser.add_argument("--tau", type=float, default=0.001,
+    train_parser.add_argument("--tau", type=float, default=0.5,
                               help="Target network update rate")
     train_parser.add_argument("--checkpoint_path",
                               help="Continue training with a pre-trained model given by CHECKPOINT_PATH.")

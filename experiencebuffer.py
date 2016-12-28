@@ -13,5 +13,5 @@ class ExperienceBuffer:
         # [[s', a, r, s, done']
         #  [s', a, r, s, done']
         #  ...                ]]
-        experience = np.array(random.sample(self.buff, batch_size))
-        return experience
+        batch = np.array(random.sample(self.buff, batch_size))
+        return np.vstack(batch[:, 0]), batch[:, 1], batch[:, 2], np.vstack(batch[:, 3]), batch[:, 4]
