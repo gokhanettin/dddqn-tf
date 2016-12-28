@@ -227,16 +227,14 @@ def train(session, graph_ops, nactions, saver):
                     session.run(op_update_target_params)
                 if total_step % F.online_update_frequency == 0:
                     batch = experience_buffer.sample(F.batch_size)
-                    next_state_batch = np.vstack(batch[:, 3])
-                    current_state_batch = np.vstack(batch[:, 0])
-                    action_batch = batch[:, 1]
+                    current_state_batch, action_batch, reward_batch, next_state_batch, done_batch = batch
                     actions = session.run(op_predict_action,
                                         feed_dict={op_current_state: next_state_batch})
                     target_q_values = session.run(op_target_q_values,
                                                 feed_dict={op_next_state: next_state_batch})
                     double_q_values = target_q_values[range(F.batch_size), actions]
-                    not_done = -(batch[:, 4] - 1)
-                    target = batch[:, 2] + (F.gamma * double_q_values * not_done)
+                    not_done = -(done_batch - 1)
+                    target = reward_batch + (F.gamma * double_q_values * not_done)
                     session.run(op_update_online_params,
                                 feed_dict={op_current_state: current_state_batch,
                                            op_target: target,
