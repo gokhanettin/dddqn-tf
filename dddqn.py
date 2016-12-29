@@ -73,9 +73,13 @@ def get_graph_ops(nactions):
     next_state, target_q_values = get_network_ops(nactions)
     target_params = tf.trainable_variables()[len(online_params):]
 
-    update_target_params = \
+    update_target_params_with_tau = \
         [target_params[i].assign(F.tau * online_params[i] \
                                          + (1-F.tau) * target_params[i])
+         for i in range(len(target_params))]
+
+    update_target_params_without_tau = \
+        [target_params[i].assign(online_params[i])
          for i in range(len(target_params))]
 
     predict_action = tf.argmax(online_q_values, 1)
@@ -105,7 +109,8 @@ def get_graph_ops(nactions):
            'update_online_params': update_online_params,
            'next_state': next_state,
            'target_q_values': target_q_values,
-           'update_target_params': update_target_params}
+           'update_target_params_with_tau': update_target_params_with_tau,
+           'update_target_params_without_tau': update_target_params_without_tau}
     return ops
 
 
@@ -183,8 +188,9 @@ def train(session, graph_ops, nactions, saver):
     op_update_online_params = graph_ops['update_online_params']
     op_next_state = graph_ops['next_state']
     op_target_q_values = graph_ops['target_q_values']
-    op_update_target_params = graph_ops['update_target_params']
-    session.run(op_update_target_params)
+    op_update_target_params_with_tau = graph_ops['update_target_params_with_tau']
+    op_update_target_params_without_tau = graph_ops['update_target_params_without_tau']
+    session.run(op_update_target_params_without_tau)
 
     summary_tags, op_summary_placeholders, op_summaries = get_summary_ops()
 
@@ -242,7 +248,7 @@ def train(session, graph_ops, nactions, saver):
                                            op_target: target,
                                            op_action: action_batch})
                 if total_step % F.target_update_frequency == 0:
-                    session.run(op_update_target_params)
+                    session.run(op_update_target_params_with_tau)
             current_state = next_state
             ep_reward += reward
             ep_max_q += (np.max(online_q_values) - ep_max_q) / ep_step

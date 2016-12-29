@@ -46,7 +46,7 @@ def get_arguments():
                               help="Resized screen width.")
     train_parser.add_argument("--height", type=int, default=84,
                               help="Resized screen height.")
-    train_parser.add_argument("--alpha", type=float, default=0.0001,
+    train_parser.add_argument("--alpha", type=float, default=0.00025,
                               help="Learning rate.")
     train_parser.add_argument("--gamma", type=float, default=0.99,
                               help="Discount factor.")
