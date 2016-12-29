@@ -33,7 +33,7 @@ def get_arguments():
                               help="How many pre-processed frames in a state.")
     train_parser.add_argument("--online_update_frequency", type=int, default=4,
                               help="Frequency to update online params.")
-    train_parser.add_argument("--target_update_frequency", type=int, default=1000,
+    train_parser.add_argument("--target_update_frequency", type=int, default=4,
                               help="Frequency to update target params.")
     train_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
@@ -46,11 +46,11 @@ def get_arguments():
                               help="Resized screen width.")
     train_parser.add_argument("--height", type=int, default=84,
                               help="Resized screen height.")
-    train_parser.add_argument("--alpha", type=float, default=0.00025,
+    train_parser.add_argument("--alpha", type=float, default=0.0001,
                               help="Learning rate.")
     train_parser.add_argument("--gamma", type=float, default=0.99,
                               help="Discount factor.")
-    train_parser.add_argument("--tau", type=float, default=0.5,
+    train_parser.add_argument("--tau", type=float, default=0.0001,
                               help="Target network update rate")
     train_parser.add_argument("--checkpoint_path",
                               help="Continue training with a pre-trained model given by CHECKPOINT_PATH.")

@@ -193,6 +193,7 @@ def train(session, graph_ops, nactions, saver):
     drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
     epsilon = F.start_epsilon
     experience_buffer = ExperienceBuffer(F.experience_buffer_size)
+    episode_buffer = ExperienceBuffer(F.experience_buffer_size)
     validation_states = None
     total_step = 0
     state = training_env.reset()
@@ -216,15 +217,16 @@ def train(session, graph_ops, nactions, saver):
             next_state = get_flat_state(state)
             adjusted_reward = adjust_reward(reward)
 
-            experience_buffer.add(np.reshape(
-                np.array([current_state, action, adjusted_reward, next_state, done]), [1, 5]))
-            if total_step > F.num_random_steps:
+            if total_step <= F.num_random_steps:
+                experience_buffer.add(
+                    np.array([current_state, action, adjusted_reward, next_state, done]))
+            else:
+                episode_buffer.add(
+                    np.array([current_state, action, adjusted_reward, next_state, done]))
                 if validation_states is None:
                     validation_states, _, _, _, _ = experience_buffer.sample(F.batch_size)
                 if epsilon > F.final_epsilon:
                     epsilon -= drop_epsilon
-                if total_step % F.target_update_frequency == 0:
-                    session.run(op_update_target_params)
                 if total_step % F.online_update_frequency == 0:
                     batch = experience_buffer.sample(F.batch_size)
                     current_state_batch, action_batch, reward_batch, next_state_batch, done_batch = batch
@@ -239,6 +241,8 @@ def train(session, graph_ops, nactions, saver):
                                 feed_dict={op_current_state: current_state_batch,
                                            op_target: target,
                                            op_action: action_batch})
+                if total_step % F.target_update_frequency == 0:
+                    session.run(op_update_target_params)
             current_state = next_state
             ep_reward += reward
             ep_max_q += (np.max(online_q_values) - ep_max_q) / ep_step
@@ -246,6 +250,9 @@ def train(session, graph_ops, nactions, saver):
                 ep_counter += 1
                 ep_step = 0
                 state = training_env.reset()
+                for _ in range(len(episode_buffer.buff)):
+                    experience = episode_buffer.buff.pop()
+                    experience_buffer.add(experience)
                 current_state = get_flat_state(state)
                 training_avrg_reward += (ep_reward - training_avrg_reward) / ep_counter
                 ep_reward = 0.0

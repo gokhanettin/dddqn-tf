@@ -7,7 +7,7 @@ class ExperienceBuffer:
         self.buff = deque(maxlen=maxlen)
 
     def add(self, experience):
-        self.buff.extend(experience)
+        self.buff.append(experience)
 
     def sample(self, batch_size):
         # [[s', a, r, s, done']
