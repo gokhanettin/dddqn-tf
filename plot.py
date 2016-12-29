@@ -6,7 +6,7 @@ import matplotlib
 
 parser = argparse.ArgumentParser()
 parser.add_argument("csv_file")
-parser.add_argument("--x_axis", choices=['epoch', 'step', 'episode'],
+parser.add_argument("--x_axis", choices=['epoch', 'step'],
                     default="epoch",
                     help="X axis of the plot")
 parser.add_argument("--y_axis", choices=['reward', 'maxq', 'epsilon'],
@@ -31,7 +31,6 @@ data = np.loadtxt(args.csv_file, skiprows=1, delimiter=",", dtype = dtype)
 labels = {
     "epoch": "Epoch",
     "step": "Step",
-    "episode": "Episode",
     "reward": "Avrg. Reward",
     "maxq": "Avrg. Max Q",
     "epsilon": "Epsilon"
@@ -46,7 +45,7 @@ elif args.y_axis == "maxq":
     ax.plot(data[args.x_axis], data["train_max_q"], label='Train', linestyle='--')
     ax.plot(data[args.x_axis], data["validation_max_q"], label='Validation')
     ax.legend()
-else:
+elif args.y_axis == "epsilon":
     ax.plot(data[args.x_axis], data["epsilon"])
 ax.set_xlabel(labels[args.x_axis])
 ax.set_ylabel(labels[args.y_axis])

@@ -92,9 +92,9 @@ python dddqn.py test my-Catch /tmp/checkpoints/catch1.ckpt-XXXX --eval_dir=/tmp/
 ## How to plot
 
 ```
-python plot.py /tmp/summaries/plot.py --x_axis=episode --y_axis=reward
-python plot.py /tmp/summaries/plot.py --x_axis=episode --y_axis=maxq
-python plot.py /tmp/summaries/plot.py --x_axis=episode --y_axis=epsilon
+python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=reward
+python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=maxq
+python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=epsilon
 ```
 
 [1]: ./dddqn_args.py
