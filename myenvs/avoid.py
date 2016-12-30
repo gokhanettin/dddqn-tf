@@ -1,5 +1,6 @@
 from __future__ import print_function
 import itertools
+from copy import copy
 from collections import deque
 import numpy as np
 import scipy.misc
@@ -57,12 +58,12 @@ class Avoid:
         self._objects.append(poison4)
 
         self._rendered = False
-        self._state = deque(maxlen=self._nchannels-1)
+        self._state = deque(maxlen=self._nchannels)
         x = self._get_preprocessed_frame()
-        s = np.stack(([x] * self._nchannels), axis = 0)
-        for _ in range(self._nchannels-1):
+        for _ in range(self._nchannels):
             self._state.append(x)
-        return s
+        state = copy(self._state)
+        return state
 
     def render(self):
         if not self._rendered:
@@ -79,12 +80,9 @@ class Avoid:
         self._move(action)
         r, done = self._check_goal()
         x = self._get_preprocessed_frame()
-        previous_frames = np.array(self._state)
-        s = np.empty((self._nchannels, self._height, self._width))
-        s[:self._nchannels-1] = previous_frames
-        s[self._nchannels-1] = x
         self._state.append(x)
-        return s, r, done, None
+        state = copy(self._state)
+        return state, r, done, None
 
     def get_num_actions(self):
         # up, down, right, left
@@ -179,7 +177,7 @@ if __name__ == "__main__":
     env.monitor_start("/tmp/avoid/eval")
     while not done:
         env.render()
-        rand_action = random.randrange( env.get_num_actions())
-        state, reward, done, info = env.step(rand_action)
+        action = random.randrange(env.get_num_actions())
+        state, reward, done, info = env.step(action)
         print(reward, done)
     env.monitor_close()

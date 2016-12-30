@@ -13,9 +13,9 @@ def get_arguments():
                               help="Number of steps with random actions before training.")
     train_parser.add_argument("--num_epochs", type=int, default=200,
                               help="Number of epochs.")
-    train_parser.add_argument("--num_training_steps", type=int, default=2500,
+    train_parser.add_argument("--num_training_steps", type=int, default=50000,
                               help="Number of training steps per epoch.")
-    train_parser.add_argument("--num_validation_steps", type=int, default=1250,
+    train_parser.add_argument("--num_validation_steps", type=int, default=25000,
                               help="Number of validation steps after each epoch.")
     train_parser.add_argument("--batch_size", type=int, default=32,
                               help="Minibatch size for network update.")
@@ -25,15 +25,15 @@ def get_arguments():
                               help="Initial epsilon during training.")
     train_parser.add_argument("--final_epsilon", type=float, default=0.1,
                               help="Final epsilon during training.")
-    train_parser.add_argument("--epsilon_annealing_steps", type=int, default=50000,
+    train_parser.add_argument("--epsilon_annealing_steps", type=int, default=1000000,
                               help="Number of steps to decay epsilon to its final value.")
-    train_parser.add_argument("--experience_buffer_size", type=int, default=50000,
+    train_parser.add_argument("--experience_buffer_size", type=int, default=200000,
                               help="How many experience items the buffer can hold.")
     train_parser.add_argument("--num_channels", type=int, default=4,
                               help="How many pre-processed frames in a state.")
     train_parser.add_argument("--online_update_frequency", type=int, default=4,
                               help="Frequency to update online params.")
-    train_parser.add_argument("--target_update_frequency", type=int, default=4,
+    train_parser.add_argument("--target_update_frequency", type=int, default=10000,
                               help="Frequency to update target params.")
     train_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
@@ -50,7 +50,7 @@ def get_arguments():
                               help="Learning rate.")
     train_parser.add_argument("--gamma", type=float, default=0.99,
                               help="Discount factor.")
-    train_parser.add_argument("--tau", type=float, default=0.0001,
+    train_parser.add_argument("--tau", type=float, default=1.0,
                               help="Target network update rate")
     train_parser.add_argument("--checkpoint_path",
                               help="Continue training with a pre-trained model given by CHECKPOINT_PATH.")

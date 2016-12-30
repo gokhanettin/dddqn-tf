@@ -4,14 +4,20 @@ import numpy as np
 
 class ExperienceBuffer:
     def __init__(self, maxlen):
-        self.buff = deque(maxlen=maxlen)
+        self._buff = deque(maxlen=maxlen)
 
-    def add(self, experience):
-        self.buff.append(experience)
+    def append(self, experience):
+        self._buff.append(experience)
+
+    def extend(self, other):
+        self._buff.extend(other._buff)
+
+    def clear(self):
+        self._buff.clear()
 
     def sample(self, batch_size):
-        # [[s', a, r, s, done']
-        #  [s', a, r, s, done']
-        #  ...                ]]
-        batch = np.array(random.sample(self.buff, batch_size))
-        return np.vstack(batch[:, 0]), batch[:, 1], batch[:, 2], np.vstack(batch[:, 3]), batch[:, 4]
+        # [(s, a, r, s', done)
+        #  (s, a, r, s', done)
+        #  ...                )]
+        batch = np.array(random.sample(self._buff, batch_size))
+        return np.stack(batch[:, 0]), batch[:, 1], batch[:, 2], np.stack(batch[:, 3]), batch[:, 4]

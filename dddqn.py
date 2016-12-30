@@ -15,8 +15,10 @@ def get_num_actions():
     env = make_environment(F.game, F.height, F.width, F.num_channels)
     return env.get_num_actions()
 
-def get_flat_state(state):
-    return np.reshape(state, [F.num_channels * F.height * F.width])
+def get_flat_states(state):
+    np_state = np.array(state)
+    sh = np_state.shape
+    return np.reshape(np_state, (sh[0], sh[1]*sh[2]*sh[3]))
 
 def static_vars(**kwargs):
     def decorate(func):
@@ -55,16 +57,16 @@ def get_network_ops(nactions):
     net = tflearn.conv_2d(inputs, 32, 8, strides=4, padding='valid', activation='relu')
     net = tflearn.conv_2d(net, 64, 4, strides=2, padding='valid', activation='relu')
     net = tflearn.conv_2d(net, 64, 3, strides=1, padding='valid', activation='relu')
-    net = tflearn.conv_2d(net, 512, 7, strides=1, padding='valid', activation='relu')
 
-    advantage_net, value_net = tf.split(3, 2, net)
+    advantage_net = tflearn.fully_connected(net, 512, activation='relu')
+    value_net = tflearn.fully_connected(net, 512, activation='relu')
+
     advantage = tflearn.fully_connected(advantage_net, nactions)
     value = tflearn.fully_connected(value_net, 1)
 
     # See Eq. (9) in https://arxiv.org/pdf/1511.06581.pdf
-    advantage = tf.sub(advantage,
+    q_values = value + tf.sub(advantage,
                        tf.reduce_mean(advantage, reduction_indices=1, keep_dims=True))
-    q_values = value + advantage
     return flat_state, q_values
 
 def get_graph_ops(nactions):
@@ -130,7 +132,6 @@ def validate(session, graph_ops, env, validation_states):
     op_online_q_values = graph_ops['online_q_values']
 
     state = env.reset()
-    state = get_flat_state(state)
     ep_reward = 0.0
     ep_max_q = 0.0
     avrg_reward = 0.0
@@ -140,23 +141,22 @@ def validate(session, graph_ops, env, validation_states):
     for _ in range(F.num_validation_steps):
         ep_step += 1
         online_q_values = session.run(op_online_q_values,
-                                        feed_dict={op_current_state: [state]})
+                                        feed_dict={op_current_state: get_flat_states([state])})
         action = np.argmax(online_q_values)
         if random.random() < F.validation_epsilon:
             action = random.randrange(nactions)
         state, reward, done, _ = env.step(action)
-        state = get_flat_state(state)
         ep_reward += reward
         if done:
             ep_counter += 1
             ep_step = 0
             state = env.reset()
-            state = get_flat_state(state)
             avrg_reward += (ep_reward - avrg_reward) / ep_counter
             ep_reward = 0.0
             ep_max_q = 0.0
     if validation_states is not None:
-        qvalues = session.run(op_online_q_values, feed_dict={op_current_state: validation_states})
+        qvalues = session.run(op_online_q_values,
+                              feed_dict={op_current_state: get_flat_states(validation_states)})
         maxqs = np.max(qvalues, axis=1)
         assert maxqs.shape[0] == qvalues.shape[0]
         avrg_max_q = np.mean(maxqs)
@@ -202,8 +202,7 @@ def train(session, graph_ops, nactions, saver):
     episode_buffer = ExperienceBuffer(F.experience_buffer_size)
     validation_states = None
     total_step = 0
-    state = training_env.reset()
-    current_state = get_flat_state(state)
+    current_state = training_env.reset()
     for epoch in range(F.num_epochs+1):
         ep_reward = 0.0
         ep_max_q = 0.0
@@ -215,58 +214,59 @@ def train(session, graph_ops, nactions, saver):
             total_step += 1
             ep_step += 1
             online_q_values = session.run([op_online_q_values],
-                                    feed_dict={op_current_state: [current_state]})
+                                    feed_dict={op_current_state: get_flat_states([current_state])})
             action = np.argmax(online_q_values)
             if random.random() < epsilon or total_step <= F.num_random_steps:
                 action = random.randrange(nactions)
-            state, reward, done, _ = training_env.step(action)
-            next_state = get_flat_state(state)
+            next_state, reward, done, _ = training_env.step(action)
             adjusted_reward = adjust_reward(reward)
 
             if total_step <= F.num_random_steps:
-                experience_buffer.add(
-                    np.array([current_state, action, adjusted_reward, next_state, done]))
+                experience_buffer.append(
+                    (current_state, action, adjusted_reward, next_state, done))
             else:
-                episode_buffer.add(
-                    np.array([current_state, action, adjusted_reward, next_state, done]))
+                episode_buffer.append(
+                    (current_state, action, adjusted_reward, next_state, done))
                 if validation_states is None:
                     validation_states, _, _, _, _ = experience_buffer.sample(F.batch_size)
                 if epsilon > F.final_epsilon:
                     epsilon -= drop_epsilon
                 if total_step % F.online_update_frequency == 0:
                     batch = experience_buffer.sample(F.batch_size)
-                    current_state_batch, action_batch, reward_batch, next_state_batch, done_batch = batch
+                    prestates, action_batch, reward_batch, poststates, done_batch = batch
+                    prestate_batch = get_flat_states(prestates)
+                    poststate_batch = get_flat_states(poststates)
                     actions = session.run(op_predict_action,
-                                        feed_dict={op_current_state: next_state_batch})
+                                        feed_dict={op_current_state: poststate_batch})
                     target_q_values = session.run(op_target_q_values,
-                                                feed_dict={op_next_state: next_state_batch})
+                                                feed_dict={op_next_state: poststate_batch})
                     double_q_values = target_q_values[range(F.batch_size), actions]
                     not_done = -(done_batch - 1)
                     target = reward_batch + (F.gamma * double_q_values * not_done)
                     session.run(op_update_online_params,
-                                feed_dict={op_current_state: current_state_batch,
+                                feed_dict={op_current_state: prestate_batch,
                                            op_target: target,
                                            op_action: action_batch})
-                if total_step % F.target_update_frequency == 0:
                     session.run(op_update_target_params_with_tau)
+                if total_step % F.target_update_frequency == 0:
+                    session.run(op_update_target_params_without_tau)
             current_state = next_state
             ep_reward += reward
             ep_max_q += (np.max(online_q_values) - ep_max_q) / ep_step
             if done:
                 ep_counter += 1
                 ep_step = 0
-                state = training_env.reset()
-                for _ in range(len(episode_buffer.buff)):
-                    experience = episode_buffer.buff.pop()
-                    experience_buffer.add(experience)
-                current_state = get_flat_state(state)
+                current_state = training_env.reset()
+                experience_buffer.extend(episode_buffer)
+                episode_buffer.clear()
                 training_avrg_reward += (ep_reward - training_avrg_reward) / ep_counter
                 ep_reward = 0.0
                 ep_max_q = 0.0
 
 
         if validation_states is not None:
-            qvalues = session.run(op_online_q_values, feed_dict={op_current_state: validation_states})
+            qvalues = session.run(op_online_q_values,
+                                  feed_dict={op_current_state: get_flat_states(validation_states)})
             maxqs = np.max(qvalues, axis=1)
             assert maxqs.shape[0] == qvalues.shape[0]
             training_avrg_max_q = np.mean(maxqs)
@@ -308,18 +308,16 @@ def test(session, graph_ops, naction, saver):
 
     for _ in range(F.num_testing_episodes):
         state = env.reset()
-        state = get_flat_state(state)
         ep_reward = 0.0
         done = False
         while not done:
             env.render()
             online_q_values = session.run(op_online_q_values,
-                                          feed_dict={op_current_state: [state]})
+                                          feed_dict={op_current_state: get_flat_states([state])})
             action = np.argmax(online_q_values)
             if random.random() < F.test_epsilon:
                 action = random.randrange(nactions)
             state, reward, done, _ = env.step(action)
-            state = get_flat_state(state)
             ep_reward += reward
         print("EPISODE REWARD:", ep_reward)
     env.monitor_close()

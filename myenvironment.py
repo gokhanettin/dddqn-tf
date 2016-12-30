@@ -16,8 +16,8 @@ class MyEnvironment:
     def render(self):
         self._env.render()
 
-    def step(self, action_index):
-        return self._env.step(action_index)
+    def step(self, action):
+        return self._env.step(action)
 
     def get_num_actions(self):
         return self._env.get_num_actions()
