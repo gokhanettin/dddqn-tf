@@ -75,12 +75,13 @@ def get_graph_ops(nactions):
     next_state, target_q_values = get_network_ops(nactions)
     target_params = tf.trainable_variables()[len(online_params):]
 
-    update_target_params_with_tau = \
-        [target_params[i].assign(F.tau * online_params[i] \
-                                         + (1-F.tau) * target_params[i])
+    # Tau is the smoothness factor.
+    update_target_params_smooth = \
+        [target_params[i].assign(F.tau * target_params[i] \
+                                         + (1-F.tau) * online_params[i])
          for i in range(len(target_params))]
 
-    update_target_params_without_tau = \
+    update_target_params = \
         [target_params[i].assign(online_params[i])
          for i in range(len(target_params))]
 
@@ -89,8 +90,10 @@ def get_graph_ops(nactions):
     action = tf.placeholder(shape=[None], dtype=tf.int32)
     onehot_action = tf.one_hot(action, nactions, dtype=tf.float32)
     acted = tf.reduce_sum(tf.mul(online_q_values, onehot_action), reduction_indices=1)
-    td_error = tf.square(target - acted)
-    loss = tf.reduce_mean(td_error)
+    td_error = target - acted
+    clipped_error = tf.select(tf.abs(td_error) < 1.0,
+                              0.5 * tf.square(td_error), tf.abs(td_error) - 0.5)
+    loss = tf.reduce_mean(clipped_error)
 
     optimizers = {
         'adam': tf.train.AdamOptimizer(learning_rate=F.alpha),
@@ -111,8 +114,8 @@ def get_graph_ops(nactions):
            'update_online_params': update_online_params,
            'next_state': next_state,
            'target_q_values': target_q_values,
-           'update_target_params_with_tau': update_target_params_with_tau,
-           'update_target_params_without_tau': update_target_params_without_tau}
+           'update_target_params_smooth': update_target_params_smooth,
+           'update_target_params': update_target_params}
     return ops
 
 
@@ -188,9 +191,9 @@ def train(session, graph_ops, nactions, saver):
     op_update_online_params = graph_ops['update_online_params']
     op_next_state = graph_ops['next_state']
     op_target_q_values = graph_ops['target_q_values']
-    op_update_target_params_with_tau = graph_ops['update_target_params_with_tau']
-    op_update_target_params_without_tau = graph_ops['update_target_params_without_tau']
-    session.run(op_update_target_params_without_tau)
+    op_update_target_params_smooth = graph_ops['update_target_params_smooth']
+    op_update_target_params = graph_ops['update_target_params']
+    session.run(op_update_target_params)
 
     summary_tags, op_summary_placeholders, op_summaries = get_summary_ops()
 
@@ -213,8 +216,9 @@ def train(session, graph_ops, nactions, saver):
         for _ in range(F.num_training_steps):
             total_step += 1
             ep_step += 1
-            online_q_values = session.run([op_online_q_values],
+            online_q_values = session.run(op_online_q_values,
                                     feed_dict={op_current_state: get_flat_states([current_state])})
+            training_avrg_max_q += np.max(online_q_values)
             action = np.argmax(online_q_values)
             if random.random() < epsilon or total_step <= F.num_random_steps:
                 action = random.randrange(nactions)
@@ -238,6 +242,8 @@ def train(session, graph_ops, nactions, saver):
                     poststate_batch = get_flat_states(poststates)
                     actions = session.run(op_predict_action,
                                         feed_dict={op_current_state: poststate_batch})
+                    if total_step % F.target_update_frequency == 0:
+                        session.run(op_update_target_params_smooth)
                     target_q_values = session.run(op_target_q_values,
                                                 feed_dict={op_next_state: poststate_batch})
                     double_q_values = target_q_values[range(F.batch_size), actions]
@@ -247,9 +253,6 @@ def train(session, graph_ops, nactions, saver):
                                 feed_dict={op_current_state: prestate_batch,
                                            op_target: target,
                                            op_action: action_batch})
-                    session.run(op_update_target_params_with_tau)
-                if total_step % F.target_update_frequency == 0:
-                    session.run(op_update_target_params_without_tau)
             current_state = next_state
             ep_reward += reward
             ep_max_q += (np.max(online_q_values) - ep_max_q) / ep_step
@@ -263,13 +266,7 @@ def train(session, graph_ops, nactions, saver):
                 ep_reward = 0.0
                 ep_max_q = 0.0
 
-
-        if validation_states is not None:
-            qvalues = session.run(op_online_q_values,
-                                  feed_dict={op_current_state: get_flat_states(validation_states)})
-            maxqs = np.max(qvalues, axis=1)
-            assert maxqs.shape[0] == qvalues.shape[0]
-            training_avrg_max_q = np.mean(maxqs)
+        training_avrg_max_q /= float(F.num_training_steps)
         validation_avrg_reward, validation_avrg_max_q = validate(session, graph_ops, validation_env, validation_states)
         stats = [validation_avrg_reward, validation_avrg_max_q,
                  training_avrg_reward, training_avrg_max_q, epsilon]
@@ -288,9 +285,8 @@ def train(session, graph_ops, nactions, saver):
         print(fmt.format(epoch, total_step, ep_counter, stats[0], stats[1], stats[4]))
 
         csv_writer.writerow((epoch, total_step, ep_counter, stats[0], stats[1],
-                                stats[2], stats[3], stats[3]))
+                                stats[2], stats[3], stats[4]))
         csv_file.flush()
-
 
         if epoch % F.checkpoint_interval == 0:
             saver.save(session, F.checkpoint_dir + "/"

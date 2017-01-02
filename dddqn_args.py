@@ -9,7 +9,7 @@ def get_arguments():
                               help="Environment id such as Breakout-v0, my-Catch etc.")
     train_parser.add_argument("--experiment", default="experiment",
                               help="Name of the current experiment.")
-    train_parser.add_argument("--num_random_steps", type=int, default=10000,
+    train_parser.add_argument("--num_random_steps", type=int, default=50000,
                               help="Number of steps with random actions before training.")
     train_parser.add_argument("--num_epochs", type=int, default=200,
                               help="Number of epochs.")
@@ -27,14 +27,16 @@ def get_arguments():
                               help="Final epsilon during training.")
     train_parser.add_argument("--epsilon_annealing_steps", type=int, default=1000000,
                               help="Number of steps to decay epsilon to its final value.")
-    train_parser.add_argument("--experience_buffer_size", type=int, default=200000,
+    train_parser.add_argument("--experience_buffer_size", type=int, default=225000,
                               help="How many experience items the buffer can hold.")
     train_parser.add_argument("--num_channels", type=int, default=4,
                               help="How many pre-processed frames in a state.")
     train_parser.add_argument("--online_update_frequency", type=int, default=4,
                               help="Frequency to update online params.")
-    train_parser.add_argument("--target_update_frequency", type=int, default=10000,
+    train_parser.add_argument("--target_update_frequency", type=int, default=12500,
                               help="Frequency to update target params.")
+    train_parser.add_argument("--tau", type=float, default=0.0,
+                              help="Target network update rate")
     train_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
                               default="adam",
@@ -50,8 +52,6 @@ def get_arguments():
                               help="Learning rate.")
     train_parser.add_argument("--gamma", type=float, default=0.99,
                               help="Discount factor.")
-    train_parser.add_argument("--tau", type=float, default=1.0,
-                              help="Target network update rate")
     train_parser.add_argument("--checkpoint_path",
                               help="Continue training with a pre-trained model given by CHECKPOINT_PATH.")
     train_parser.add_argument("--summary_dir", default="/tmp/summaries",
@@ -78,14 +78,14 @@ def get_arguments():
                               help="Resized screen width.")
     test_parser.add_argument("--height", type=int, default=84,
                               help="Resized screen height.")
+    test_parser.add_argument("--tau", type=float, default=0.0,
+                              help="Target network update rate")
     test_parser.add_argument("--trainer",
                               choices=['adam', 'rmsprop', 'adadelta', 'adagrad', 'gradientdescent'],
                               default="adam",
                               help="Optimizer to train the network.")
     test_parser.add_argument("--alpha", type=float, default=0.00025,
                               help="Learning rate.")
-    test_parser.add_argument("--tau", type=float, default=0.001,
-                              help="Target network update rate")
 
     return parser.parse_args()
 

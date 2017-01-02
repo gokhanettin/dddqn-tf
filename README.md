@@ -55,14 +55,18 @@ shorter time to train.
 
 Here is a training command.
 ```
-python dddqn.py train \
-my-Catch  \
---experiment=catch1 \
---num_random_steps=10000 \
+python dddqn.py train my-Catch \
+--experiment=catch1 \ 
+--num_random_steps=5000 \
 --num_training_steps=2500 \
 --num_validation_steps=1250 \
 --epsilon_annealing_steps=50000 \
---experience_buffer_size=50000
+--experience_buffer_size=225000 \
+--summary_dir=/tmp/summaries \
+--checkpoint_dir=/tmp/checkpoints \
+--target_update_frequency=5000 \
+--tau=0.0 \
+--alpha=0.00025
 ```
 
 See [dddqn_args.py][1] for all options.
