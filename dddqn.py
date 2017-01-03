@@ -202,7 +202,6 @@ def train(session, graph_ops, nactions, saver):
     drop_epsilon = (F.start_epsilon - F.final_epsilon) / F.epsilon_annealing_steps
     epsilon = F.start_epsilon
     experience_buffer = ExperienceBuffer(F.experience_buffer_size)
-    episode_buffer = ExperienceBuffer(F.experience_buffer_size)
     validation_states = None
     total_step = 0
     current_state = training_env.reset()
@@ -225,16 +224,15 @@ def train(session, graph_ops, nactions, saver):
             next_state, reward, done, _ = training_env.step(action)
             adjusted_reward = adjust_reward(reward)
 
-            if total_step <= F.num_random_steps:
-                experience_buffer.append(
-                    (current_state, action, adjusted_reward, next_state, done))
-            else:
-                episode_buffer.append(
-                    (current_state, action, adjusted_reward, next_state, done))
+            experience_buffer.append(
+                (current_state, action, adjusted_reward, next_state, done))
+            if total_step > F.num_random_steps:
                 if validation_states is None:
                     validation_states, _, _, _, _ = experience_buffer.sample(F.batch_size)
                 if epsilon > F.final_epsilon:
                     epsilon -= drop_epsilon
+                if total_step % F.target_update_frequency == 0:
+                    session.run(op_update_target_params_smooth)
                 if total_step % F.online_update_frequency == 0:
                     batch = experience_buffer.sample(F.batch_size)
                     prestates, action_batch, reward_batch, poststates, done_batch = batch
@@ -242,8 +240,6 @@ def train(session, graph_ops, nactions, saver):
                     poststate_batch = get_flat_states(poststates)
                     actions = session.run(op_predict_action,
                                         feed_dict={op_current_state: poststate_batch})
-                    if total_step % F.target_update_frequency == 0:
-                        session.run(op_update_target_params_smooth)
                     target_q_values = session.run(op_target_q_values,
                                                 feed_dict={op_next_state: poststate_batch})
                     double_q_values = target_q_values[range(F.batch_size), actions]
@@ -260,8 +256,6 @@ def train(session, graph_ops, nactions, saver):
                 ep_counter += 1
                 ep_step = 0
                 current_state = training_env.reset()
-                experience_buffer.extend(episode_buffer)
-                episode_buffer.clear()
                 training_avrg_reward += (ep_reward - training_avrg_reward) / ep_counter
                 ep_reward = 0.0
                 ep_max_q = 0.0
