@@ -42,6 +42,14 @@ def adjust_reward(reward):
         adjusted_reward = reward
     return adjusted_reward
 
+def reset_env(env):
+    noops = random.randrange(F.num_noops_max)
+    state = env.reset()
+    for _ in range(noops):
+        action = random.randrange(env.get_num_actions())
+        state, _, _, _ = env.step(action)
+    return state
+
 
 
 def get_network_ops(nactions):
@@ -204,7 +212,7 @@ def train(session, graph_ops, nactions, saver):
     experience_buffer = ExperienceBuffer(F.experience_buffer_size)
     validation_states = None
     total_step = 0
-    current_state = training_env.reset()
+    current_state = reset_env(training_env)
     for epoch in range(F.num_epochs+1):
         ep_reward = 0.0
         ep_max_q = 0.0
@@ -255,7 +263,7 @@ def train(session, graph_ops, nactions, saver):
             if done:
                 ep_counter += 1
                 ep_step = 0
-                current_state = training_env.reset()
+                current_state = reset_env(training_env)
                 training_avrg_reward += (ep_reward - training_avrg_reward) / ep_counter
                 ep_reward = 0.0
                 ep_max_q = 0.0

@@ -11,6 +11,9 @@ def get_arguments():
                               help="Name of the current experiment.")
     train_parser.add_argument("--num_random_steps", type=int, default=50000,
                               help="Number of steps with random actions before training.")
+
+    train_parser.add_argument("--num_noops_max", type=int, default=30,
+                              help="Number of no ops steps when a new episode starts.")
     train_parser.add_argument("--num_epochs", type=int, default=200,
                               help="Number of epochs.")
     train_parser.add_argument("--num_training_steps", type=int, default=50000,
