@@ -1,13 +1,10 @@
 from __future__ import print_function
 import itertools
-import warnings
 from copy import copy
 from collections import deque
 import numpy as np
 import scipy.misc
-from skimage.transform import resize
-from skimage.color import rgb2gray
-from skimage import img_as_ubyte
+import cv2
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -160,11 +157,8 @@ class Catch:
 
     def _get_preprocessed_frame(self):
         self._mk_frame()
-        float_frame = resize(rgb2gray(self._frame), (self._width, self._height))
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            uint8_frame = img_as_ubyte(float_frame)
-        return uint8_frame
+        return cv2.resize(cv2.cvtColor(self._frame, cv2.COLOR_RGB2GRAY),
+                          (self._width, self._height))
 
 
 

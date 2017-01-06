@@ -40,12 +40,17 @@ $ apt-get install -y python-dev cmake zlib1g-dev libjpeg-dev xvfb libav-tools xo
 $ pip install gym[atari]
 ```
 
-
 I had to run the following commands to fix the problems that appeared after gym installation.
 
 ```
 $ conda install -f numpy
 $ conda install libgcc
+```
+
+Install opencv for image transformations.
+
+```
+$ conda install opencv
 ```
 
 ## How to train
