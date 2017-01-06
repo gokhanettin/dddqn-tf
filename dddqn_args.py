@@ -30,13 +30,13 @@ def get_arguments():
                               help="Final epsilon during training.")
     train_parser.add_argument("--epsilon_annealing_steps", type=int, default=1000000,
                               help="Number of steps to decay epsilon to its final value.")
-    train_parser.add_argument("--experience_buffer_size", type=int, default=225000,
+    train_parser.add_argument("--experience_buffer_size", type=int, default=1000000,
                               help="How many experience items the buffer can hold.")
     train_parser.add_argument("--num_channels", type=int, default=4,
                               help="How many pre-processed frames in a state.")
     train_parser.add_argument("--online_update_frequency", type=int, default=4,
                               help="Frequency to update online params.")
-    train_parser.add_argument("--target_update_frequency", type=int, default=12500,
+    train_parser.add_argument("--target_update_frequency", type=int, default=10000,
                               help="Frequency to update target params.")
     train_parser.add_argument("--tau", type=float, default=0.0,
                               help="Target network update rate")
