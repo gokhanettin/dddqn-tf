@@ -107,7 +107,7 @@ class Avoid:
         a = np.ones([self._size_y+2, self._size_x+2, 3], dtype=np.uint8)
         a[1:-1, 1:-1, :] = 0
         for obj in self._objects:
-            a[obj.y+1:obj.y+obj.size+1, obj.x+1:obj.x+obj.size+1, obj.channel] = 1
+            a[obj.y+1:obj.y+obj.size+1, obj.x+1:obj.x+obj.size+1, obj.channel] = 255
         r = scipy.misc.imresize(a[:,:,0],[84,84,1],interp='nearest')
         g = scipy.misc.imresize(a[:,:,1],[84,84,1],interp='nearest')
         b = scipy.misc.imresize(a[:,:,2],[84,84,1],interp='nearest')
