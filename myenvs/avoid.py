@@ -4,8 +4,6 @@ from copy import copy
 from collections import deque
 import numpy as np
 from scipy.misc import imresize
-from skimage.transform import resize
-from skimage.color import rgb2gray
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -167,7 +165,9 @@ class Avoid:
 
     def _get_preprocessed_frame(self):
         self._mk_frame()
-        return np.float16(resize(rgb2gray(self._frame), (self._width, self._height)))
+        # http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
+        gray = np.dot(self._frame[..., :3], [0.299, 0.587, 0.114])/255.0
+        return imresize(gray, (self._width, self._height), interp='nearest')
 
 if __name__ == "__main__":
     import random

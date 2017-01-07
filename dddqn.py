@@ -18,7 +18,9 @@ def get_num_actions():
 def get_flat_states(state):
     np_state = np.array(state)
     sh = np_state.shape
-    return np.reshape(np_state, (sh[0], sh[1]*sh[2]*sh[3]))
+    # Flatten the states and normalize pixels
+    state = np.reshape(np_state, (sh[0], sh[1]*sh[2]*sh[3]))/255.0
+    return state
 
 def static_vars(**kwargs):
     def decorate(func):
