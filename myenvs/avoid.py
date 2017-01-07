@@ -128,18 +128,15 @@ class Avoid:
 
     def _move(self, direction):
         agent = self._objects[0]
-        agentX = agent.x
-        agentY = agent.y
         if direction == _UP and agent.y >= 1:
             agent.y -= 1
-        if direction == _DOWN and agent.y <= self._size_y-2:
+        elif direction == _DOWN and agent.y <= self._size_y-2:
             agent.y += 1
-        if direction == _LEFT and agent.x >= 1:
+        elif direction == _LEFT and agent.x >= 1:
             agent.x -= 1
-        if direction == _RIGHT and agent.x <= self._size_x-2:
+        elif direction == _RIGHT and agent.x <= self._size_x-2:
             agent.x += 1
         self._objects[0] = agent
-
 
     def _check_goal(self):
         others = []
