@@ -1,7 +1,8 @@
 from collections import deque
 from copy import copy
 import numpy as np
-from scipy.misc import imresize
+from skimage.transform import resize
+from skimage.color import rgb2gray
 import gym
 
 class GymEnvironment:
@@ -41,10 +42,7 @@ class GymEnvironment:
         self._env.monitor.close()
 
     def _get_preprocessed_frame(self, x):
-        # http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
-        gray = np.dot(x[..., :3], [0.299, 0.587, 0.114])/255.0
-        return np.float16(imresize(gray, (self._width, self._height), interp='nearest'))
-
+        return np.float16(resize(rgb2gray(x), (self._width, self._height)))
 
 if __name__ == "__main__":
     import random
