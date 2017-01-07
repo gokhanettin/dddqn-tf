@@ -99,9 +99,9 @@ class Catch:
         a[1:-1, 1:-1, :] = 0
         for obj in self._objects:
             a[obj.y+1:obj.y+obj.size+1, obj.x+1:obj.x+obj.size+1, obj.channel] = 255
-        r = scipy.misc.imresize(a[:,:,0],[84,84,1],interp='nearest')
-        g = scipy.misc.imresize(a[:,:,1],[84,84,1],interp='nearest')
-        b = scipy.misc.imresize(a[:,:,2],[84,84,1],interp='nearest')
+        r = imresize(a[:,:,0],[84,84,1],interp='nearest')
+        g = imresize(a[:,:,1],[84,84,1],interp='nearest')
+        b = imresize(a[:,:,2],[84,84,1],interp='nearest')
         self._frame = np.stack([r, g, b],axis=2)
         return self._frame
 
