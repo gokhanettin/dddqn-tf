@@ -47,12 +47,6 @@ $ conda install -f numpy
 $ conda install libgcc
 ```
 
-Install opencv for image transformations.
-
-```
-$ conda install opencv
-```
-
 ## How to train
 
 We have gym atari games and custom games. Custom games takes considerably

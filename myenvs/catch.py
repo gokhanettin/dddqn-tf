@@ -3,8 +3,7 @@ import itertools
 from copy import copy
 from collections import deque
 import numpy as np
-import scipy.misc
-import cv2
+from scipy.misc import imresize
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
@@ -157,8 +156,9 @@ class Catch:
 
     def _get_preprocessed_frame(self):
         self._mk_frame()
-        return cv2.resize(cv2.cvtColor(self._frame, cv2.COLOR_RGB2GRAY),
-                          (self._width, self._height))
+        # http://stackoverflow.com/questions/596216/formula-to-determine-brightness-of-rgb-color
+        gray = np.dot(self._frame[..., :3], [0.299, 0.587, 0.114])/255.0
+        return np.float16(imresize(gray, (self._width, self._height), interp='nearest'))
 
 
 
