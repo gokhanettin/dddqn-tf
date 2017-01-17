@@ -1,4 +1,9 @@
-# Deep Reinforcement Learning with Tensorflow
+# Dueling Double Deep Q-Network with Tensorflow
+
+You need a powerful GPU for training. After 12 hours of training for each game
+on GTX-1070 I got this result:
+
+[![Dueling DDQN in action](https://img.youtube.com/vi/Ma1b6EeHlV0/0.jpg)](https://youtu.be/Ma1b6EeHlV0)
 
 ## Setup
 
@@ -49,7 +54,7 @@ $ conda install libgcc
 
 ## How to train
 
-We have gym atari games and custom games. Custom games takes considerably
+We have custom games and gym atari games. The custom games takes considerably
 shorter time to train.
 
 Here is a training command.
@@ -70,7 +75,7 @@ python dddqn.py train my-Catch \
 
 See [dddqn_args.py][1] for all options.
 
-Custom games are:
+The custom games I created using the code provided by [this][9] blog post.
 
 - my-Catch
 - my-Avoid
@@ -78,7 +83,7 @@ Custom games are:
 Popular atari games are Breakout-v0, Pong-v0, SpaceInviders-v0, etc.
 See [gym atari environments][2] for the full list of atari games.
 
-You can use `tensorboard` to follow the training progress of the above command.
+You can use `tensorboard` to follow the training progress.
 
 ```
 tensorboard --logdir=/tmp/summaries/catch1
@@ -100,6 +105,12 @@ python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=maxq
 python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=epsilon
 ```
 
+## Resources
+[Playing Atari with Deep Reinforcement Learning][10]
+[Deep Reinforcement Learning with Double Q-learning][11]
+[Dueling Network Architectures for Deep Reinforcement Learning][12]
+[Demystifying Deep Reinforcement Learning][13]
+
 [1]: ./dddqn_args.py
 [2]: https://gym.openai.com/envs#atari
 [3]: https://www.continuum.io/downloads
@@ -108,3 +119,8 @@ python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=epsilon
 [6]: https://github.com/tflearn/tflearn
 [7]: https://www.youtube.com/watch?v=io6Ajf5XkaM
 [8]: https://alliseesolutions.wordpress.com/2016/09/08/install-gpu-tensorflow-from-sources-w-ubuntu-16-04-and-cuda-8-0-rc/
+[9]: https://medium.com/@awjuliani/simple-reinforcement-learning-with-tensorflow-part-4-deep-q-networks-and-beyond-8438a3e2b8df#.blrck6a74
+[10]: https://arxiv.org/pdf/1312.5602v1.pdf
+[11]: https://arxiv.org/pdf/1509.06461v3.pdf
+[12]: https://arxiv.org/pdf/1511.06581.pdf
+[13]: https://www.nervanasys.com/demystifying-deep-reinforcement-learning/

@@ -52,8 +52,6 @@ def reset_env(env):
         state, _, _, _ = env.step(action)
     return state
 
-
-
 def get_network_ops(nactions):
     # Environments states should have the shape of `reshaped_state`,
     # we then transpose it to have the shape of `inputs`. Note that
