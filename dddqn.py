@@ -108,7 +108,7 @@ def get_graph_ops(nactions):
         'rmsprop': tf.train.RMSPropOptimizer(learning_rate=F.alpha),
         'adadelta': tf.train.AdadeltaOptimizer(learning_rate=F.alpha),
         'adagrad': tf.train.AdadeltaOptimizer(learning_rate=F.alpha),
-        'dradientdescent': tf.train.GradientDescentOptimizer(learning_rate=F.alpha)
+        'gradientdescent': tf.train.GradientDescentOptimizer(learning_rate=F.alpha)
     }
 
     trainer = optimizers[F.trainer]
