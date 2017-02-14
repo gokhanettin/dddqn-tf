@@ -106,10 +106,10 @@ python plot.py /tmp/summaries/catch1/plot.csv --x_axis=epoch --y_axis=epsilon
 ```
 
 ## Resources
-[Playing Atari with Deep Reinforcement Learning][10]
-[Deep Reinforcement Learning with Double Q-learning][11]
-[Dueling Network Architectures for Deep Reinforcement Learning][12]
-[Demystifying Deep Reinforcement Learning][13]
+- [Playing Atari with Deep Reinforcement Learning][10]
+- [Deep Reinforcement Learning with Double Q-learning][11]
+- [Dueling Network Architectures for Deep Reinforcement Learning][12]
+- [Demystifying Deep Reinforcement Learning][13]
 
 [1]: ./dddqn_args.py
 [2]: https://gym.openai.com/envs#atari
