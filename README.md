@@ -28,8 +28,8 @@ $ conda remove -n <env-name> --all # Delete your environment <env-name>
 
 Follow [tensorflow installation][4] on anaconda. If you want to use your GPU,
 follow the Cuda installation and gpu-enabled tensorflow installation. If you are
-installing gpu-enabled tensorflow, you might find [this][7] links helpful.
-If you are building gpu-enabled tensorflow from scratch, follow [this][8] link.
+installing gpu-enabled tensorflow, you might find [this][7] video helpful.
+If you are building gpu-enabled tensorflow from scratch, follow [this][8].
 
 TFLearn setup is as easy as running the following command.
 
